@@ -7,12 +7,13 @@ import tech.touka.amapnavi.core.model.CarState
 /**
  * 多传感器融合侧向安全评估器（纯 Kotlin）。
  *
- * 熔断优先级：实线标线 > 毫米波 BSD 盲区 > 激光雷达盲区标志 > 动态制动安全净空。
- * 任何一项不满足即 100% 阻断变道。
+ * 熔断优先级：实线标线 > 毫米波 BSD 盲区 > 激光雷达盲区标志 > 后向 TTC > 动态制动安全净空。
+ * 任何一项不满足即 100% 阻断变道；传感器失效（TTC<=0 或距离缺键）同样阻断。
  */
 class LateralSafetyEvaluator(
     private val minSafeTimeHeadway: Float = 2.0f,
-    private val minStaticClearanceM: Float = 10.0f
+    private val minStaticClearanceM: Float = 10.0f,
+    private val minSafeTtcSeconds: Float = 2.5f
 ) {
 
     fun evaluateSide(action: LaneAction, car: CarState, isTargetSolid: Boolean): SafetyAuditResult {
@@ -60,7 +61,27 @@ class LateralSafetyEvaluator(
             )
         }
 
-        // 4. 激光雷达动态制动净空模型
+        // 4. C3 后向 TTC 门禁（与 C3 desire_helper 的 1.8/2.5/3.5s 档位同源）
+        //    C3 语义：0.0 = 传感器失效/无回波，99.0 = 净空；<=0 必须阻断，禁止 fail-open。
+        val behindTtc = car.lidarBehindVdistTime
+        if (behindTtc <= 0f) {
+            return SafetyAuditResult(
+                isSafe = false,
+                blockCause = BlockCause.LIDAR_HAZARD,
+                isLidarBlocked = true,
+                reasonDesc = "后向TTC失效或无有效回波，按失效必阻断处理"
+            )
+        }
+        if (behindTtc < minSafeTtcSeconds) {
+            return SafetyAuditResult(
+                isSafe = false,
+                blockCause = BlockCause.LIDAR_HAZARD,
+                isLidarBlocked = true,
+                reasonDesc = "后向TTC过近(实际:${String.format(java.util.Locale.US, "%.1f", behindTtc)}s < 门限:${minSafeTtcSeconds}s)"
+            )
+        }
+
+        // 5. 激光雷达动态制动净空模型
         // D_safe = max(10.0, v_ego(m/s) * T_headway)
         val actualRearDistance = if (action == LaneAction.LEFT) {
             car.leftRearDistance

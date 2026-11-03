@@ -4,7 +4,7 @@ import org.json.JSONObject
 import tech.touka.amapnavi.core.model.CarState
 
 /**
- * C3 遥测 JSON (Port 7705) 快速解析器。
+ * C3 遥测 JSON (Port 7706) 快速解析器。
  *
  * 编译期字符串字面量 key + 逐字符数值扫描：不再为每个字段构造 "\"$key\":" 与
  * substring()/toXxx()，从而消除 Dalvik 上高频 UDP 循环里的 GC_FOR_ALLOC 停顿。
@@ -46,9 +46,10 @@ object CarrotTelemetryParser {
     }
 
     private fun parseDistanceMeter(rawVal: Float): Float {
-        if (rawVal <= -999000.0f || rawVal == 0.0f) return 999.0f
-        // M-13: C3 端已把 lb_drel/rb_drel 固定为米制，此处不再按阈值猜测单位，
-        // 直接采信（顺带消除 JSONObject 重载默认值 999.0 被误换算的问题）。
+        // fail-closed：缺键(-999999)、无效值与真实 0m 一律视为“无安全净空”，
+        // 交由 LateralSafetyEvaluator 阻断变道；不得再用 999.0f 放行。
+        if (rawVal <= -999000.0f || rawVal == 0.0f) return 0.0f
+        // M-13: C3 端已把 lb_drel/rb_drel 固定为米制，直接采信。
         return Math.abs(rawVal)
     }
     private fun scanBool(s: String, key: String, defVal: Boolean): Boolean {

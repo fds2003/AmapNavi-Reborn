@@ -50,6 +50,7 @@ class OvertakeStateMachineTest {
     private fun car(
         steerAngle: Float = 0f,
         atcState: Int = 0,
+        lidarBehindVdistTime: Float = 99f,
         leftRearDistance: Float = 999f,
         timestamp: Long = now
     ): CarState = CarState(
@@ -63,6 +64,7 @@ class OvertakeStateMachineTest {
         drel = 30f,
         vrel = -0.5f,
         vLead = 80,
+        lidarBehindVdistTime = lidarBehindVdistTime,
         leftRearDistance = leftRearDistance,
         atcState = atcState,
         timestamp = timestamp
@@ -136,6 +138,39 @@ class OvertakeStateMachineTest {
         val lost = tick(car(timestamp = now - 1500L))
         assertEquals(OvertakeState.IDLE, lost.state)
         assertEquals(BlockCause.TELEMETRY_LOST, lost.blockCause)
+    }
+
+    @Test
+    fun `执行中遥测中断由心跳撤单`() {
+        assertEquals(OvertakeState.EVALUATING, tick(car()).state)
+        assertEquals(OvertakeState.SIDE_CHECKING, tick(car()).state)
+        assertEquals(OvertakeState.PREPARE, tick(car()).state)
+        now += 1300L
+        assertEquals(OvertakeState.EXECUTING, tick(car()).state)
+
+        // 心跳看门狗在无遥测包时调用，必须撤销执行中的变道
+        val lost = machine.onTelemetryLost(1500L)
+        assertEquals(OvertakeState.IDLE, lost.state)
+        assertEquals(LaneAction.KEEP, lost.action)
+        assertEquals(BlockCause.TELEMETRY_LOST, lost.blockCause)
+        assertEquals(1, cancels.size)
+        assertEquals(LaneAction.LEFT, cancels.first())
+        assertTrue(sounds.contains(SoundEvent.LANE_CHANGE_CANCEL))
+    }
+
+    @Test
+    fun `待机时遥测中断不发送撤单`() {
+        val lost = machine.onTelemetryLost(1500L)
+        assertEquals(OvertakeState.IDLE, lost.state)
+        assertEquals(BlockCause.TELEMETRY_LOST, lost.blockCause)
+        assertTrue(cancels.isEmpty())
+    }
+
+    @Test
+    fun `遥测恢复后重新进入评估`() {
+        machine.onTelemetryLost(1500L)
+        assertEquals(OvertakeState.EVALUATING, tick(car()).state)
+        assertEquals(BlockCause.NONE, machine.status().blockCause)
     }
 
     @Test

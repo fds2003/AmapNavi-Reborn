@@ -2,13 +2,16 @@ package tech.touka.amapnavi.data.relay
 
 import android.content.Context
 import android.content.IntentFilter
+import android.os.SystemClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import tech.touka.amapnavi.core.event.LaneAction
@@ -45,6 +48,7 @@ class RelayEngine private constructor(context: Context) {
         private const val CANCEL_COMMAND = "CANCEL_LANE_CHANGE"
         private const val TURN_TYPE_RIGHT = 3
         private const val RAMP_PLAN_START_DISTANCE_M = 500
+        private const val TELEMETRY_TIMEOUT_MS = 1500L
 
         @Volatile
         private var instance: RelayEngine? = null
@@ -117,6 +121,10 @@ class RelayEngine private constructor(context: Context) {
     private var trafficLightMonitorJob: Job? = null
     private var lastTrafficLightStatus = 0
 
+    /** 遥测心跳：tick 只在收包时运行，断流必须由独立线程发现 */
+    private val telemetryWatchdog = TelemetryWatchdog(TELEMETRY_TIMEOUT_MS)
+    private var telemetryWatchdogJob: Job? = null
+
     /** 启动中继；重复调用幂等。 */
     fun start() {
         if (running) return
@@ -132,6 +140,7 @@ class RelayEngine private constructor(context: Context) {
         udpClient.start()
         deviceDiscovery.start()
         startTrafficLightMonitor()
+        startTelemetryWatchdog()
         _overtakeStatusFlow.value = stateMachine.status()
     }
 
@@ -150,6 +159,9 @@ class RelayEngine private constructor(context: Context) {
         trafficLightMonitorJob?.cancel()
         trafficLightMonitorJob = null
         lastTrafficLightStatus = 0
+        telemetryWatchdogJob?.cancel()
+        telemetryWatchdogJob = null
+        telemetryWatchdog.reset()
         stateMachine.reset()
         _carStateFlow.value = CarState()
         _overtakeStatusFlow.value = stateMachine.status()
@@ -212,14 +224,32 @@ class RelayEngine private constructor(context: Context) {
     }
 
     private fun onTelemetry(payload: String) {
+        telemetryWatchdog.onTelemetry(SystemClock.elapsedRealtime())
         val car = CarrotTelemetryParser.parse(payload)
-        val navi = decoder.naviStateFlow.value
+        val navi = decoder.getFreshNaviState(2000L)
         _carStateFlow.value = car
 
         val settings: OvertakeSettings = settingsRepository.settings
         _overtakeStatusFlow.value = stateMachine.tick(car, navi, settings)
 
         updateRampSpeed(car, navi)
+    }
+
+    /**
+     * 独立心跳看门狗：不依赖遥测包到达，每 100ms 检查一次。
+     * 断流超过 1.5s 立即撤销执行中的变道并广播 TELEMETRY_LOST，避免状态机冻结在 EXECUTING。
+     */
+    private fun startTelemetryWatchdog() {
+        if (telemetryWatchdogJob?.isActive == true) return
+        telemetryWatchdogJob = scope.launch {
+            while (isActive) {
+                delay(100L)
+                if (!running) continue
+                if (telemetryWatchdog.shouldTrip(SystemClock.elapsedRealtime())) {
+                    _overtakeStatusFlow.value = stateMachine.onTelemetryLost(TELEMETRY_TIMEOUT_MS)
+                }
+            }
+        }
     }
 
     /**

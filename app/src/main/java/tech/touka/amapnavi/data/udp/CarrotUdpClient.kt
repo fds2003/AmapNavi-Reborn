@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * CarrotMan / OpenPilot 高速双向 UDP 通信引擎。
  *
- *  - 本地绑定 7705 接收 10~20Hz 遥测 JSON；
- *  - 向 C3:7706 下发控制指令，index 采用 AtomicInteger 单调自增防丢包序号。
+ *  - 本地绑定 7706 接收 C3 下发的约 10Hz 遥测 JSON；
+ *  - 向 C3:7705 下发控制指令，index 采用 AtomicInteger 单调自增防丢包序号。
  */
 class CarrotUdpClient(
     private val scope: CoroutineScope,
@@ -110,8 +110,14 @@ class CarrotUdpClient(
         val seq = sequenceId.getAndIncrement()
         val json = JSONObject().apply {
             put("cmd", cmd)
-            put("direction", action.code)
-            put("arg", action.code)
+            if (cmd == "SPEED_LIMIT") {
+                // 限速是数值指令：arg 必须是十进制速度值，绝不能复用车道码（否则 C3 int("KEEP") 抛异常）
+                put("direction", "KEEP")
+                put("arg", vCruise)
+            } else {
+                put("direction", action.code)
+                put("arg", action.code)
+            }
             put("param", overtakeMode)
             put("seq", seq)
             put("index", seq)

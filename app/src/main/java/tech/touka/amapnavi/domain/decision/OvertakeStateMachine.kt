@@ -49,16 +49,7 @@ class OvertakeStateMachine(
 
         // 第一层防御：协议看门狗，遥测中断立即熔断
         if (!car.isTelemetryFresh(now, settings.telemetryTimeoutMs)) {
-            if (state == OvertakeState.EXECUTING) {
-                onCancelCommand(candidate)
-                onSound(SoundEvent.LANE_CHANGE_CANCEL)
-            }
-            state = OvertakeState.IDLE
-            candidate = LaneAction.KEEP
-            blockCause = BlockCause.TELEMETRY_LOST
-            message = "C3 遥测中断超过 ${settings.telemetryTimeoutMs}ms，已恢复安全静默"
-            stateSinceMs = now
-            return snapshot(now)
+            return onTelemetryLost(settings.telemetryTimeoutMs)
         }
 
         // 反向变道防横跳冷却锁
@@ -243,12 +234,16 @@ class OvertakeStateMachine(
         }
 
         if (now - stateSinceMs > settings.executeTimeoutMs) {
-            state = OvertakeState.FINISHING
+            onCancelCommand(candidate)
+            onSound(SoundEvent.LANE_CHANGE_CANCEL)
+            cooldownUntilMs = now + settings.interruptCooldownMs
+            state = OvertakeState.COOLDOWN
             stateSinceMs = now
-            message = "变道执行超时 ${settings.executeTimeoutMs}ms，按完成结算"
+            blockCause = BlockCause.TELEMETRY_LOST
+            message = "变道执行超时 ${settings.executeTimeoutMs}ms，已撤销变道并锁定冷却"
+            return
         }
     }
-
     private fun handleFinishing(settings: OvertakeSettings, now: Long) {
         onSound(SoundEvent.LANE_CHANGE_OK)
         cooldownUntilMs = now + settings.standardCooldownMs
@@ -325,5 +320,23 @@ class OvertakeStateMachine(
             onCancelCommand(candidate)
         }
         reset()
+    }
+
+    /**
+     * 遥测中断熔断。
+     * tick() 只在收到遥测包时运行，无法自行发现「断流」；需由 RelayEngine 的独立心跳线程调用。
+     */
+    fun onTelemetryLost(timeoutMs: Long): OvertakeStatus {
+        val now = clock()
+        if (state == OvertakeState.EXECUTING) {
+            onCancelCommand(candidate)
+            onSound(SoundEvent.LANE_CHANGE_CANCEL)
+        }
+        state = OvertakeState.IDLE
+        candidate = LaneAction.KEEP
+        blockCause = BlockCause.TELEMETRY_LOST
+        message = "C3 遥测中断超过 ${timeoutMs}ms，已恢复安全静默"
+        stateSinceMs = now
+        return snapshot(now)
     }
 }

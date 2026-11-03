@@ -12,7 +12,7 @@ import tech.touka.amapnavi.domain.safety.LateralSafetyEvaluator
 /**
  * 侧向安全熔断测试（纯 JVM）。
  *
- * 验证优先级：实线标线 > BSD 盲区 > 激光盲区标志 > 动态制动净空。
+ * 验证优先级：实线标线 > BSD 盲区 > 激光盲区标志 > 后向 TTC > 动态制动净空。
  */
 class LateralSafetyEvaluatorTest {
 
@@ -24,6 +24,7 @@ class LateralSafetyEvaluatorTest {
         rightBlindspot: Boolean = false,
         lidarLeftRearBlind: Boolean = false,
         lidarRightRearBlind: Boolean = false,
+        lidarBehindVdistTime: Float = 99f,
         leftRearDistance: Float = 999f,
         rightRearDistance: Float = 999f
     ): CarState = CarState(
@@ -32,6 +33,7 @@ class LateralSafetyEvaluatorTest {
         rightBlindspot = rightBlindspot,
         lidarLeftRearBlind = lidarLeftRearBlind,
         lidarRightRearBlind = lidarRightRearBlind,
+        lidarBehindVdistTime = lidarBehindVdistTime,
         leftRearDistance = leftRearDistance,
         rightRearDistance = rightRearDistance
     )
@@ -113,5 +115,33 @@ class LateralSafetyEvaluatorTest {
         val result = evaluator.evaluateSide(LaneAction.KEEP, car(), isTargetSolid = false)
         assertFalse(result.isSafe)
         assertEquals(BlockCause.NO_TARGET_LANE, result.blockCause)
+    }
+
+    @Test
+    fun `后向TTC失效时_即使距离充足也阻断`() {
+        // C3 语义：0.0 表示无有效回波，必须 fail-closed
+        val result = evaluator.evaluateSide(
+            LaneAction.LEFT, car(lidarBehindVdistTime = 0f, leftRearDistance = 80f), isTargetSolid = false
+        )
+        assertFalse(result.isSafe)
+        assertEquals(BlockCause.LIDAR_HAZARD, result.blockCause)
+        assertTrue(result.isLidarBlocked)
+    }
+
+    @Test
+    fun `后向TTC低于门限时阻断`() {
+        val result = evaluator.evaluateSide(
+            LaneAction.LEFT, car(lidarBehindVdistTime = 1.5f, leftRearDistance = 80f), isTargetSolid = false
+        )
+        assertFalse(result.isSafe)
+        assertTrue(result.isLidarBlocked)
+    }
+
+    @Test
+    fun `后向TTC充足时按距离门限放行`() {
+        val result = evaluator.evaluateSide(
+            LaneAction.LEFT, car(lidarBehindVdistTime = 5f, leftRearDistance = 80f), isTargetSolid = false
+        )
+        assertTrue(result.isSafe)
     }
 }

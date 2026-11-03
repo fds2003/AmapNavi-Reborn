@@ -61,9 +61,9 @@ class UdpDeviceActivity : AppCompatActivity() {
             }
         }
 
-        adapter = object : ArrayAdapter<C3Device>(this, android.R.layout.simple_list_item_2, deviceList) {
+        adapter = object : ArrayAdapter<C3Device>(this, android.R.layout.simple_list_item_2, android.R.id.text1, deviceList) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getView(position, convertView, parent)
+                val view = convertView ?: android.view.LayoutInflater.from(context).inflate(android.R.layout.simple_list_item_2, parent, false)
                 val text1 = view.findViewById<TextView>(android.R.id.text1)
                 val text2 = view.findViewById<TextView>(android.R.id.text2)
                 val item = getItem(position)

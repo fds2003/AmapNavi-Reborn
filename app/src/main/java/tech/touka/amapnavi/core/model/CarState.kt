@@ -3,7 +3,7 @@ package tech.touka.amapnavi.core.model
 /**
  * 自车与传感器底盘状态模型。
  *
- * 全部字段来源于 C3 端 10~20Hz 上报的遥测 JSON，保持不可变数据类以保障跨线程并发安全。
+ * 全部字段来源于 C3 端约 10Hz 上报的遥测 JSON，保持不可变数据类以保障跨线程并发安全。
  */
 data class CarState(
     // 自车基础动力学
@@ -20,7 +20,7 @@ data class CarState(
     // 正前车雷达 (lead1)
     val lead1: Boolean = false,             // 前方是否有车
     val drel: Float = 0f,                   // 前车纵向相对距离 (米)
-    val vrel: Float = 0f,                   // 前车相对速度 (m/s，负值表示逼近)
+    val vrel: Float = 0f,                   // 前车相对速度 (km/h，C3 实发单位，负值表示逼近)
     val vLead: Int = 0,                     // 前车绝对车速 (km/h)
 
     // 盲区与毫米波雷达 (BSD)
@@ -34,11 +34,11 @@ data class CarState(
     val lidarBehindVrelTime: Float = 0f,    // 激光雷达后向逼近时距 (秒)
     val lidarLeftRearBlind: Boolean = false,    // 左后激光雷达盲区报警
     val lidarRightRearBlind: Boolean = false,   // 右后激光雷达盲区报警
-    val leftRearDistance: Float = 999f,     // 激光雷达测得左后方车辆距离 (米)
-    val rightRearDistance: Float = 999f,    // 激光雷达测得右后方车辆距离 (米)
+    val leftRearDistance: Float = 0f,       // 激光雷达测得左后方车辆距离 (米)；0 = 无数据/失效，门禁阻断
+    val rightRearDistance: Float = 0f,      // 激光雷达测得右后方车辆距离 (米)；0 = 无数据/失效，门禁阻断
 
     // 状态反馈
-    val atcState: Int = 0,                  // OpenPilot 底层变道执行状态（3 为变道完成）
+    val atcState: Int = 0,                  // LaneChangeState.raw（1=preLaneChange, 2=laneChangeStarting, 3=laneChangeFinishing）
     val timestamp: Long = 0L                // 遥测到达本地的时间戳
 ) {
 

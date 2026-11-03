@@ -43,14 +43,16 @@ object LaneWayParser {
     fun parse(driveWayRaw: String?): ParsedLaneWay {
         if (driveWayRaw.isNullOrEmpty()) return ParsedLaneWay()
 
-        val tokens = driveWayRaw.split("|")
+        // 高德文档示例用 "/" 分隔，历史抓包用 "|"；两种都接受，避免整串被当单车道
+        val tokens = driveWayRaw.split("|", "/")
         val suggest = ArrayList<Int>()
         val disable = ArrayList<Int>()
 
         tokens.forEachIndexed { index, token ->
             if (token.isNotEmpty()) {
                 val c = token[0]
-                if (c == 'X') {
+                // 文档中的 x 大小写混用，统一按禁行处理（fail-closed）
+                if (c == 'X' || c == 'x') {
                     disable.add(index)
                 } else if (c.isUpperCase()) {
                     suggest.add(index)

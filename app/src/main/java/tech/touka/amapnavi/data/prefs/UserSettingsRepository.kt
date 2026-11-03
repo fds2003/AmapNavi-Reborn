@@ -8,7 +8,7 @@ import tech.touka.amapnavi.core.model.OvertakeSettings
  * 完整车载参数持久化仓库。
  *
  * 涵盖：通用参数、领航参数、超车参数。
- * 内存缓存避免 20Hz 决策周期内反复读取 SharedPreferences 造成主线程 I/O。
+ * 内存缓存避免 10Hz 决策周期内反复读取 SharedPreferences 造成主线程 I/O。
  */
 class UserSettingsRepository(context: Context) {
 

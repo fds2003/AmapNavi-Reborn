@@ -248,12 +248,14 @@ class MainActivity : AppCompatActivity() {
             color(if (car.lead1) R.color.text_primary else R.color.text_muted)
         )
 
-        tvLidarLeft.text = lidarText(car.leftRearDistance, car.lidarLeftRearBlind)
+        // C3 无侧后雷达时 ttc 恒为 0（fail-closed），需显式告知，避免误判为软件故障
+        val rearRadarMissing = car.isOnroad && car.lidarBehindVdistTime <= 0f
+        tvLidarLeft.text = if (rearRadarMissing) "未检测到雷达" else lidarText(car.leftRearDistance, car.lidarLeftRearBlind)
         tvLidarLeft.setTextColor(
             color(if (car.lidarLeftRearBlind) R.color.danger_red else R.color.text_primary)
         )
 
-        tvLidarRight.text = lidarText(car.rightRearDistance, car.lidarRightRearBlind)
+        tvLidarRight.text = if (rearRadarMissing) "未检测到雷达" else lidarText(car.rightRearDistance, car.lidarRightRearBlind)
         tvLidarRight.setTextColor(
             color(if (car.lidarRightRearBlind) R.color.danger_red else R.color.text_primary)
         )
@@ -473,7 +475,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun lidarText(distance: Float, blind: Boolean): String {
-        val distanceText = if (distance >= 999f) {
+        val distanceText = if (distance <= 0f) {
             "无目标"
         } else {
             String.format(Locale.US, "%.1fm", distance)
