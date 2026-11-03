@@ -130,10 +130,16 @@ class CarrotUdpClient(
         scope.launch(Dispatchers.IO) {
             val address = targetAddress ?: return@launch
             val localSocket = socket ?: return@launch
-            try {
-                localSocket.send(DatagramPacket(payload, payload.size, address, sendPort))
-            } catch (e: Exception) {
-                // 网络抖动导致的发送失败由下一次指令自然重试
+            val repeatCount = if (cmd.contains("CANCEL")) 3 else 1
+            for (i in 0 until repeatCount) {
+                try {
+                    localSocket.send(DatagramPacket(payload, payload.size, address, sendPort))
+                } catch (e: Exception) {
+                    // 网络抖动重试
+                }
+                if (repeatCount > 1 && i < repeatCount - 1) {
+                    kotlinx.coroutines.delay(20)
+                }
             }
         }
     }

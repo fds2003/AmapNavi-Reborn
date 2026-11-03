@@ -171,7 +171,7 @@ class MainActivity : AppCompatActivity() {
             settingController = tech.touka.amapnavi.ui.setting.SettingViewController(
                 activity = this,
                 rootView = inflated,
-                repo = tech.touka.amapnavi.data.prefs.UserSettingsRepository(this),
+                repo = tech.touka.amapnavi.data.prefs.UserSettingsRepository.getInstance(this),
                 onCloseRequested = { inflated.visibility = View.GONE }
             )
         }

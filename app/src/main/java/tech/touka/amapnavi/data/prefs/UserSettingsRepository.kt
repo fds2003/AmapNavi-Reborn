@@ -15,6 +15,16 @@ class UserSettingsRepository(context: Context) {
     companion object {
         private const val PREFS_NAME = "amapnavi_settings"
 
+        @Volatile
+        private var instance: UserSettingsRepository? = null
+
+        @JvmStatic
+        fun getInstance(context: Context): UserSettingsRepository {
+            return instance ?: synchronized(this) {
+                instance ?: UserSettingsRepository(context.applicationContext).also { instance = it }
+            }
+        }
+
         // 通用参数 Keys
         const val KEY_CP_TRAFFIC_ASSIST = "cbCpTrafficAssist"
         const val KEY_NAVI_TRAFFIC_ASSIST = "cbNaviTrafficAssist"
@@ -98,6 +108,16 @@ class UserSettingsRepository(context: Context) {
 
     @Volatile
     private var cachedOvertakeSettings: OvertakeSettings = loadOvertakeSettings()
+
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == KEY_OVERTAKE_ENABLED || key == KEY_REVERSE_COOLDOWN_S || key == "allow_right_overtake") {
+            cachedOvertakeSettings = loadOvertakeSettings()
+        }
+    }
+
+    init {
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
+    }
 
     val settings: OvertakeSettings
         get() = cachedOvertakeSettings

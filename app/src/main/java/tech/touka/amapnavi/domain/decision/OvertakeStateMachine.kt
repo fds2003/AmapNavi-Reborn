@@ -28,15 +28,22 @@ class OvertakeStateMachine(
     private val onControlCommand: (LaneAction, Int) -> Unit,
     private val onCancelCommand: (LaneAction) -> Unit,
     private val onSound: (SoundEvent) -> Unit,
-    private val clock: () -> Long = { System.currentTimeMillis() }
+    private val clock: () -> Long = { android.os.SystemClock.elapsedRealtime() }
 ) {
 
+    @Volatile
     private var state: OvertakeState = OvertakeState.IDLE
+    @Volatile
     private var candidate: LaneAction = LaneAction.KEEP
+    @Volatile
     private var stateSinceMs: Long = 0L
+    @Volatile
     private var cooldownUntilMs: Long = 0L
+    @Volatile
     private var steerAtExecutionStart: Float = 0f
+    @Volatile
     private var blockCause: BlockCause = BlockCause.NONE
+    @Volatile
     private var message: String = "待机"
 
     fun currentState(): OvertakeState = state
@@ -210,8 +217,9 @@ class OvertakeStateMachine(
 
     private fun handleExecuting(car: CarState, settings: OvertakeSettings, now: Long) {
         val steerDelta = abs(car.steerAngle - steerAtExecutionStart)
-        val driverIntervened = !car.engaged || car.brakePress || car.gasPress ||
-            steerDelta > settings.driverSteerThresholdDeg
+        val driverIntervened = !car.engaged || car.brakePress ||
+            steerDelta > settings.driverSteerThresholdDeg ||
+            (car.isDriverSteering && steerDelta > 5.0f)
 
         if (driverIntervened) {
             onCancelCommand(candidate)

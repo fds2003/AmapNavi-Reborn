@@ -38,60 +38,35 @@
         </activity>
         <activity
             android:name=".ui.setting.SettingActivity"
-            android:exported="true"
+            android:exported="false"
             android:windowSoftInputMode="stateHidden|adjustPan"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:launchMode="singleTask"
-            android:screenOrientation="unspecified">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:screenOrientation="unspecified" />
 
         <activity
             android:name=".ui.setting.NavSettingActivity"
-            android:exported="true"
+            android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="unspecified">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:screenOrientation="unspecified" />
 
         <activity
             android:name=".ui.setting.OvertakeSettingActivity"
-            android:exported="true"
+            android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="unspecified">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:screenOrientation="unspecified" />
 
         <activity
             android:name=".ui.setting.LogManagerActivity"
-            android:exported="true"
+            android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="unspecified">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:screenOrientation="unspecified" />
 
         <activity
             android:name=".ui.setting.UdpDeviceActivity"
-            android:exported="true"
+            android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="unspecified">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:screenOrientation="unspecified" />
 
 
         <service

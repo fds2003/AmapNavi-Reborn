@@ -64,7 +64,7 @@ class RelayEngine private constructor(context: Context) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val settingsRepository = UserSettingsRepository(appContext)
+    private val settingsRepository = UserSettingsRepository.getInstance(appContext)
     private val soundEngine = SoundFeedbackEngine(appContext)
     private val decoder = AmapBroadcastDecoder()
     private val rampSpeedPlanner = RampSpeedPlanner()
@@ -199,7 +199,7 @@ class RelayEngine private constructor(context: Context) {
     /** 巡航设定增减，通过 SPEED_LIMIT 指令同步至 C3。 */
     fun nudgeCruise(delta: Int): Int {
         val current = _carStateFlow.value.vCruise
-        val next = (current + delta).coerceIn(0, 160)
+        val next = if (current <= 0) 30 else (current + delta).coerceIn(30, 160)
         udpClient.sendControlCommand(SPEED_LIMIT_COMMAND, LaneAction.KEEP, next)
         return next
     }
