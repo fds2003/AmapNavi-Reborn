@@ -48,11 +48,12 @@
 | 核心维度 | 车载硬件参数与规格 | 严苛工程约束说明 |
 | :--- | :--- | :--- |
 | **适配车型** | 北京现代库斯途 (Custin 2021~2024 款) | 车重 1.7t~2.2t，轴距 3.055m，8AT 变速箱，500kbps 经典 C-CAN |
-| **车机主控 SoC** | 恩智浦 NXP i.MX6 Quad-Core (4核 1.0GHz) | 弱算力核心，无独立 NPU，不支持 Vulkan，不可承受复杂浮点运算 |
-| **GPU / 2D 填充** | Vivante GC2000 图形处理器 | 像素填充率极弱，消灭所有嵌套 `layout_weight` 以避免递归测量掉帧 |
-| **系统版本与运行时** | Android 4.4.2 KitKat (API 19 / Dalvik VM) | **非 ART 运行时**；Dalvik JIT 预校验无死角隔离 API 26+，杜绝 `VerifyError` |
-| **可用物理运存** | 额定 1GB / **实际系统可用仅约 350MB** | 高德自身占 209MB，**本应用必须锁定在 35MB 以内，留足 140MB 确保 R 挡倒车影像不黑屏** |
-| **中控屏幕物理规格** | 960 × 1280 物理分辨率 / 竖屏 / 160 dpi | 1dp ≈ 1px，所有卡片与栅格调节器均按车规触控热区（$\ge 48\text{dp}$）严格排布 |
+| **车机硬件方案** | 航盛电子 (HSAE) D531MC / `epoch_ku_imx6q` | 经典车规级主板方案，硬件代号 `SABRESD-MX6DQ` |
+| **车机主控 SoC** | 恩智浦 NXP/Freescale i.MX6 Quad (4核 1.0GHz) | 车规级 Cortex-A9 架构，无独立 NPU，不支持 Vulkan |
+| **GPU / 2D 填充** | Vivante GC2000 (OpenGL ES 3.0) | 像素填充率较弱，消灭所有嵌套 `layout_weight` 以避免递归测量掉帧 |
+| **系统版本与运行时** | Android 4.4.3 KitKat (API 19 / Dalvik VM) | **非 ART 运行时**；Dalvik JIT 预校验无死角隔离 API 26+，杜绝 `VerifyError` |
+| **物理运行内存 (RAM)** | **2.0 GB (MemTotal: 2,059,512 kB)** | 高德地图占约 209MB，**本应用重构至 15.5MB (仅占 0.7%)，杜绝吞噬 MemFree，确保倒车影像 ViewMonitor 毫秒级秒开** |
+| **中控屏幕物理规格** | 960 × 1280 物理分辨率 / 竖屏 / 160 dpi | 1dp = 1px，所有卡片与栅格调节器均按车规触控热区（$\ge 48\text{dp}$）严格排布 |
 
 ---
 
@@ -61,7 +62,7 @@
 ### 1. 物理内存极致精炼 (PSS 15.5MB)
 * **纯矢量去位图架构 (Zero-Bitmap)**：界面内**零图片、零 ImageView**，车道拓扑全面字符化渲染，边框底板由 GPU 顶点矢量着色；
 * **零对象分配流式扫描器 (`FastTelemetryScanner`)**：在 20Hz~50Hz 高频 UDP 循环中，直接从字节字符串游标切片提取数值，**完全杜绝 Dalvik 虚拟机的 `GC_FOR_ALLOC` 全局挂起停顿**；
-* **倒车影像绝对安全**：实测 PSS 仅 15.5 MB，即使在高德复杂 3D 渲染洪峰下，依然为车机保留 140MB+ 缓冲，杜绝挂入 R 挡时倒车影像卡死。
+* **倒车影像绝对安全**：实测 PSS 仅 15.5 MB，仅占车机 2.0GB 物理内存的 **0.7%**，杜绝原版暴涨 250MB 吞噬 MemFree 诱发系统 LMK 杀后台，确保原厂倒车影像服务 `ViewMonitor.apk` 毫秒级稳定秒开。
 
 ### 2. 同窗即时渲染架构 (In-Window SAA)
 * 废除跨进程/跨 Activity 启动机制（消除跨进程 `ActivityManagerService` 调度 400ms 延迟）；
