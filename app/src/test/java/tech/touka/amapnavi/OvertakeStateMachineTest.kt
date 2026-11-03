@@ -1,0 +1,148 @@
+package tech.touka.amapnavi
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import tech.touka.amapnavi.core.event.BlockCause
+import tech.touka.amapnavi.core.event.LaneAction
+import tech.touka.amapnavi.core.event.OvertakeState
+import tech.touka.amapnavi.core.event.SoundEvent
+import tech.touka.amapnavi.core.model.CarState
+import tech.touka.amapnavi.core.model.NaviState
+import tech.touka.amapnavi.core.model.OvertakeSettings
+import tech.touka.amapnavi.domain.decision.LeadVehicleEvaluator
+import tech.touka.amapnavi.domain.decision.OvertakeStateMachine
+import tech.touka.amapnavi.domain.decision.RouteLaneMarkingOracle
+import tech.touka.amapnavi.domain.safety.LateralSafetyEvaluator
+
+/**
+ * 自主超车状态机全节拍测试（纯 JVM，注入假时钟）。
+ *
+ * 覆盖：完整 7 状态闭环、激光雷达逼近阻断、驾驶员反向打轮打断并锁定 60s、
+ * 遥测超时熔断。
+ */
+class OvertakeStateMachineTest {
+
+    private var now: Long = 1_000_000L
+
+    private val commands = ArrayList<Pair<LaneAction, Int>>()
+    private val cancels = ArrayList<LaneAction>()
+    private val sounds = ArrayList<SoundEvent>()
+
+    private val machine = OvertakeStateMachine(
+        safetyEvaluator = LateralSafetyEvaluator(),
+        laneOracle = RouteLaneMarkingOracle(),
+        leadEvaluator = LeadVehicleEvaluator(),
+        onControlCommand = { action, vCruise -> commands.add(action to vCruise) },
+        onCancelCommand = { action -> cancels.add(action) },
+        onSound = { event -> sounds.add(event) },
+        clock = { now }
+    )
+
+    private val settings = OvertakeSettings()
+    private val navi = NaviState(
+        navValid = true,
+        isHighway = true,
+        driveWayRaw = "s|S|s",
+        roadSpeedLimit = 120
+    )
+
+    private fun car(
+        steerAngle: Float = 0f,
+        atcState: Int = 0,
+        leftRearDistance: Float = 999f,
+        timestamp: Long = now
+    ): CarState = CarState(
+        isOnroad = true,
+        vEgo = 100,
+        vCruise = 100,
+        active = true,
+        engaged = true,
+        steerAngle = steerAngle,
+        lead1 = true,
+        drel = 30f,
+        vrel = -0.5f,
+        vLead = 80,
+        leftRearDistance = leftRearDistance,
+        atcState = atcState,
+        timestamp = timestamp
+    )
+
+    private fun tick(carState: CarState) = machine.tick(carState, navi, settings)
+
+    @Test
+    fun `前车压速触发至变道完成进入20秒冷却并恢复待机`() {
+        // 1. IDLE -> EVALUATING
+        assertEquals(OvertakeState.EVALUATING, tick(car()).state)
+        // 2. EVALUATING -> SIDE_CHECKING
+        assertEquals(OvertakeState.SIDE_CHECKING, tick(car()).state)
+        // 3. SIDE_CHECKING -> PREPARE（放行并预闪）
+        assertEquals(OvertakeState.PREPARE, tick(car()).state)
+        assertTrue(sounds.contains(SoundEvent.PRE_LANE_LEFT))
+        // 4. 预闪 1.2s 后二次校验通过并下发指令 -> EXECUTING
+        now += 1300L
+        assertEquals(OvertakeState.EXECUTING, tick(car()).state)
+        assertEquals(1, commands.size)
+        assertEquals(LaneAction.LEFT to 100, commands.first())
+        assertTrue(sounds.contains(SoundEvent.LANE_CHANGE))
+        // 5. atc_state=3 反馈 -> FINISHING
+        assertEquals(OvertakeState.FINISHING, tick(car(atcState = 3)).state)
+        // 6. FINISHING -> COOLDOWN（20 秒）
+        val cooling = tick(car(atcState = 3))
+        assertEquals(OvertakeState.COOLDOWN, cooling.state)
+        assertEquals(settings.standardCooldownMs, cooling.cooldownRemainMs)
+        assertTrue(sounds.contains(SoundEvent.LANE_CHANGE_OK))
+        // 7. 冷却结束后恢复 IDLE
+        now += 20_001L
+        assertEquals(OvertakeState.IDLE, tick(car(atcState = 3)).state)
+        assertEquals(0L, machine.status().cooldownRemainMs)
+        // 8. 待机下一拍重新进入评估
+        assertEquals(OvertakeState.EVALUATING, tick(car(atcState = 3)).state)
+    }
+
+    @Test
+    fun `激光雷达侧后逼近时阻断并停留在待机`() {
+        assertEquals(OvertakeState.EVALUATING, tick(car()).state)
+        assertEquals(OvertakeState.SIDE_CHECKING, tick(car()).state)
+        // vEgo=100km/h 要求净空≈55.6m，实测仅 30m => 阻断
+        val blocked = tick(car(leftRearDistance = 30f))
+        assertEquals(OvertakeState.IDLE, blocked.state)
+        assertEquals(BlockCause.LIDAR_HAZARD, blocked.blockCause)
+        assertTrue(commands.isEmpty())
+        assertTrue(sounds.contains(SoundEvent.CAR_WATCHOUT))
+    }
+
+    @Test
+    fun `执行中驾驶员反向打轮立即撤销并锁定60秒`() {
+        assertEquals(OvertakeState.EVALUATING, tick(car()).state)
+        assertEquals(OvertakeState.SIDE_CHECKING, tick(car()).state)
+        assertEquals(OvertakeState.PREPARE, tick(car()).state)
+        now += 1300L
+        assertEquals(OvertakeState.EXECUTING, tick(car()).state)
+
+        // 方向盘突变 40° > 25° 阈值，判定驾驶员干预
+        val interrupted = tick(car(steerAngle = 40f))
+        assertEquals(OvertakeState.COOLDOWN, interrupted.state)
+        assertEquals(1, cancels.size)
+        assertEquals(LaneAction.LEFT, cancels.first())
+        assertEquals(BlockCause.DRIVER_OVERRIDE, interrupted.blockCause)
+        assertEquals(settings.interruptCooldownMs, interrupted.cooldownRemainMs)
+        assertTrue(sounds.contains(SoundEvent.LANE_CHANGE_CANCEL))
+    }
+
+    @Test
+    fun `遥测超时立即熔断回到待机`() {
+        assertEquals(OvertakeState.EVALUATING, tick(car()).state)
+        val lost = tick(car(timestamp = now - 1500L))
+        assertEquals(OvertakeState.IDLE, lost.state)
+        assertEquals(BlockCause.TELEMETRY_LOST, lost.blockCause)
+    }
+
+    @Test
+    fun `前车距离过近时不触发超车`() {
+        val nearCar = car().copy(drel = 5f)
+        assertEquals(OvertakeState.EVALUATING, tick(nearCar).state)
+        assertEquals(OvertakeState.EVALUATING, tick(nearCar).state)
+        assertEquals(BlockCause.NONE, machine.status().blockCause)
+    }
+}

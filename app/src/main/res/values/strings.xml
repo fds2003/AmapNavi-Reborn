@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AmapNavi</string>
+    <string name="label_speed">自车车速</string>
+    <string name="label_kmh">km/h</string>
+    <string name="label_lane_guide">高德车道指引</string>
+    <string name="label_radar_array">多传感器盲区阵列</string>
+    <string name="label_cruise_adjust">定速微调 ±5</string>
+    <string name="btn_overtake_on">自动超车：开</string>
+    <string name="btn_overtake_off">自动超车：关</string>
+    <string name="btn_scan">发现设备</string>
+    <string name="btn_reset">复位</string>
+    <string name="radar_bsd_left">左侧毫米波</string>
+    <string name="radar_lead">正前雷达</string>
+    <string name="radar_bsd_right">右侧毫米波</string>
+    <string name="radar_lidar_left">左后激光</string>
+    <string name="radar_ego">自车状态</string>
+    <string name="radar_lidar_right">右后激光</string>
+    <string name="dash_value">--</string>
+</resources>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_black"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- 1. 全局置顶常驻状态栏 (PERMANENT HEADER, 保证全系统风格绝对统一) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AmapNavi-Reborn"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_device_header_navi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="高德已连接"
+            android:textColor="@color/navi_blue"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tv_device_header_c3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="C3 设备管理"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- 2. 顶部统一操作栏 (Action Bar) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:orientation="horizontal"
+        android:background="#1A1A1A"
+        android:padding="6dp"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:text="局域网 Comma 3 硬件探测"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_scan_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="#1976D2"
+            android:text="重新扫描"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp" />
+
+        <Button
+            android:id="@+id/btn_device_back"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:background="#424242"
+            android:minWidth="64dp"
+            android:text="返回仪表"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- 3. 卡片式状态指示 (Card Panel) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/shape_panel"
+        android:padding="10dp"
+        android:layout_marginBottom="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_device_scan_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正在 5510 端口监听局域网 C3 遥测节点..."
+            android:textColor="#00E676"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- 4. 卡片式设备列表 (Card ListView) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/shape_card"
+        android:orientation="vertical"
+        android:padding="6dp">
+
+        <ListView
+            android:id="@+id/lv_devices"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="#2A2A2A"
+            android:dividerHeight="1dp" />
+    </LinearLayout>
+
+    <!-- 5. 底部贴士说明 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="提示：车机与 Comma 3 需连入同一车载 Wi-Fi 热点。点击列表条目即可一键锁定通信链路。"
+        android:textColor="#888888"
+        android:textSize="12sp" />
+</LinearLayout>
