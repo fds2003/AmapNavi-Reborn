@@ -10,7 +10,8 @@ object AmapContract {
 
     const val KEY_TYPE = "KEY_TYPE"
     const val KEY_TYPE_NAVI_STATE = 10001
-    const val KEY_TYPE_LANE = 10019
+    const val KEY_TYPE_DRIVE_WAY = 13012   // 原版 APK 实际使用的车道拓扑广播
+    const val KEY_TYPE_LANE = 10019        // 文档 14 声明值，保留兼容
     const val KEY_TYPE_TRAFFIC_LIGHT = 10020
 
     const val EXTRA_DRIVE_WAY = "EXTRA_DRIVE_WAY"
@@ -20,6 +21,7 @@ object AmapContract {
     const val EXTRA_SEG_REMAIN_DIS = "EXTRA_SEG_REMAIN_DIS"
     const val EXTRA_TURN_TYPE = "EXTRA_TURN_TYPE"
     const val EXTRA_ROAD_CATE = "EXTRA_ROAD_CATE"
+    const val EXTRA_ROAD_TYPE = "ROAD_TYPE"   // 原版 APK 实际读取的道路等级键
     const val EXTRA_TRAFFIC_LIGHT_SECONDS = "EXTRA_TRAFFIC_LIGHT_SECONDS"
     const val EXTRA_TRAFFIC_LIGHT_STATUS = "EXTRA_TRAFFIC_LIGHT_STATUS"
 }

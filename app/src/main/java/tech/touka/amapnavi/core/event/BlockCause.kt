@@ -5,6 +5,8 @@ package tech.touka.amapnavi.core.event
  */
 enum class BlockCause {
     NONE,
+    TARGET_LANE_OCCUPIED,
+    FRONT_BLIND,
     SOLID_LINE,
     BSD_ALARM,
     LIDAR_HAZARD,

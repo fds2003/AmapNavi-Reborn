@@ -20,6 +20,12 @@ class LateralSafetyEvaluatorTest {
 
     private fun car(
         vEgo: Int = 100,
+        leftFrontBlind: Boolean = false,
+        rightFrontBlind: Boolean = false,
+        leftLead: Boolean = false,
+        leftLeadDistance: Float = 0f,
+        rightLead: Boolean = false,
+        rightLeadDistance: Float = 0f,
         leftBlindspot: Boolean = false,
         rightBlindspot: Boolean = false,
         lidarLeftRearBlind: Boolean = false,
@@ -29,6 +35,12 @@ class LateralSafetyEvaluatorTest {
         rightRearDistance: Float = 999f
     ): CarState = CarState(
         vEgo = vEgo,
+        leftFrontBlind = leftFrontBlind,
+        rightFrontBlind = rightFrontBlind,
+        leftLead = leftLead,
+        leftLeadDistance = leftLeadDistance,
+        rightLead = rightLead,
+        rightLeadDistance = rightLeadDistance,
         leftBlindspot = leftBlindspot,
         rightBlindspot = rightBlindspot,
         lidarLeftRearBlind = lidarLeftRearBlind,
@@ -141,6 +153,82 @@ class LateralSafetyEvaluatorTest {
     fun `后向TTC充足时按距离门限放行`() {
         val result = evaluator.evaluateSide(
             LaneAction.LEFT, car(lidarBehindVdistTime = 5f, leftRearDistance = 80f), isTargetSolid = false
+        )
+        assertTrue(result.isSafe)
+    }
+
+    @Test
+    fun `目标侧前角雷达盲区阻断`() {
+        val left = evaluator.evaluateSide(
+            LaneAction.LEFT, car(leftFrontBlind = true), isTargetSolid = false
+        )
+        assertFalse(left.isSafe)
+        assertEquals(BlockCause.FRONT_BLIND, left.blockCause)
+
+        val right = evaluator.evaluateSide(
+            LaneAction.RIGHT, car(rightFrontBlind = true), isTargetSolid = false
+        )
+        assertFalse(right.isSafe)
+        assertEquals(BlockCause.FRONT_BLIND, right.blockCause)
+    }
+
+    @Test
+    fun `前角盲区优先级高于实线`() {
+        // 原版 APK LaneChangeSafetyCheckRaw：先判 l/r_front_blind(-2)，再判实线(-1)
+        val result = evaluator.evaluateSide(
+            LaneAction.LEFT, car(leftFrontBlind = true), isTargetSolid = true
+        )
+        assertFalse(result.isSafe)
+        assertEquals(BlockCause.FRONT_BLIND, result.blockCause)
+    }
+
+    @Test
+    fun `目标车道前车过近阻断`() {
+        val left = evaluator.evaluateSide(
+            LaneAction.LEFT,
+            car(leftLead = true, leftLeadDistance = 10f),
+            isTargetSolid = false
+        )
+        assertFalse(left.isSafe)
+        assertEquals(BlockCause.TARGET_LANE_OCCUPIED, left.blockCause)
+
+        val right = evaluator.evaluateSide(
+            LaneAction.RIGHT,
+            car(rightLead = true, rightLeadDistance = 15f),
+            isTargetSolid = false
+        )
+        assertFalse(right.isSafe)
+        assertEquals(BlockCause.TARGET_LANE_OCCUPIED, right.blockCause)
+    }
+
+    @Test
+    fun `目标车道有车但距离缺失时阻断`() {
+        val result = evaluator.evaluateSide(
+            LaneAction.LEFT,
+            car(leftLead = true, leftLeadDistance = 0f),
+            isTargetSolid = false
+        )
+        assertFalse(result.isSafe)
+        assertEquals(BlockCause.TARGET_LANE_OCCUPIED, result.blockCause)
+    }
+
+    @Test
+    fun `目标车道前车净空足够时放行`() {
+        val result = evaluator.evaluateSide(
+            LaneAction.LEFT,
+            car(leftLead = true, leftLeadDistance = 60f),
+            isTargetSolid = false
+        )
+        assertTrue(result.isSafe)
+    }
+
+    @Test
+    fun `非目标侧前车不影响判定`() {
+        // 左侧有车，但目标是向右变道 -> 不应阻断
+        val result = evaluator.evaluateSide(
+            LaneAction.RIGHT,
+            car(leftLead = true, leftLeadDistance = 5f),
+            isTargetSolid = false
         )
         assertTrue(result.isSafe)
     }

@@ -59,4 +59,36 @@ class LaneWayParserTest {
         assertEquals(-1, LaneWayParser.parse("s|s|s").targetLaneIndex("LEFT"))
         assertEquals(-1, LaneWayParser.parse("s|s|s").targetLaneIndex("RIGHT"))
     }
+
+    @Test
+    fun `解析13012车道JSON图标与推荐`() {
+        val raw = """{"drive_way_enabled":true,"drive_way_size":3,"drive_way_info":[
+            {"drive_way_lane_Back_icon":"15","trafficLaneAdvised":false},
+            {"drive_way_lane_Back_icon":"18","trafficLaneAdvised":true},
+            {"drive_way_lane_Back_icon":"32","trafficLaneAdvised":false}]}"""
+        val parsed = LaneWayParser.parse(raw)
+        assertEquals(3, parsed.laneCount)
+        assertEquals(listOf(1), parsed.suggest)
+        assertTrue(parsed.disable.isEmpty())
+        assertEquals("S", parsed.tokenAt(1))
+    }
+
+    @Test
+    fun `车道JSON中小于15的图标判为禁行`() {
+        val raw = """{"drive_way_enabled":true,"drive_way_size":3,"drive_way_info":[
+            {"drive_way_lane_Back_icon":"0","trafficLaneAdvised":false},
+            {"drive_way_lane_Back_icon":"15","trafficLaneAdvised":true},
+            {"drive_way_lane_Back_icon":"14","trafficLaneAdvised":false}]}"""
+        val parsed = LaneWayParser.parse(raw)
+        assertEquals(listOf(0, 2), parsed.disable)
+        assertEquals(listOf(1), parsed.suggest)
+        assertEquals("X", parsed.tokenAt(0))
+    }
+
+    @Test
+    fun `车道JSON关闭时无车道`() {
+        val parsed = LaneWayParser.parse("""{"drive_way_enabled":false}""")
+        assertEquals(0, parsed.laneCount)
+        assertTrue(parsed.suggest.isEmpty())
+    }
 }

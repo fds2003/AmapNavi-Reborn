@@ -1,6 +1,7 @@
 package tech.touka.amapnavi.data.amap
 
 import tech.touka.amapnavi.core.model.NaviState
+import tech.touka.amapnavi.core.util.RoadCate
 import tech.touka.amapnavi.core.util.LaneWayParser
 
 /**
@@ -36,7 +37,7 @@ object AmapBroadcastCodec {
             driveWayRaw = driveWayRaw,
             suggestLanes = parsed.suggest,
             disableLanes = parsed.disable,
-            isHighway = roadCate == 0,
+            isHighway = RoadCate.isHighway(roadCate),
             timestamp = nowMs
         )
     }

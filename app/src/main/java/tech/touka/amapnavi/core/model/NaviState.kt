@@ -19,6 +19,6 @@ data class NaviState(
     val driveWayRaw: String = "",               // 车道原始字符串 (如 "s|s|S|X")
     val suggestLanes: List<Int> = emptyList(),  // 推荐车道索引 (0-based)
     val disableLanes: List<Int> = emptyList(),  // 禁行车道索引 (0-based)
-    val isHighway: Boolean = false,             // 是否高速公路 (EXTRA_ROAD_CATE == 0)
+    val isHighway: Boolean = false,             // 是否高速公路 (roadcate ∈ {0,1}，由 ROAD_TYPE 转换)
     val timestamp: Long = 0L
 )

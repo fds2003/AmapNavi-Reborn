@@ -6,6 +6,8 @@ import android.content.Intent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import tech.touka.amapnavi.core.model.NaviState
+import tech.touka.amapnavi.core.util.LaneWayParser
+import tech.touka.amapnavi.core.util.RoadCate
 
 /**
  * 高德车机版标准导航广播解码器。
@@ -37,8 +39,7 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                     ?: intent.getIntExtra(AmapContract.EXTRA_SEG_REMAIN_DIS, 0)
                 val tbtTurnType = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_TURN_TYPE, 0)
-                val roadCate = intent.getIntExtra("ROAD_CATE", -1).takeIf { it != -1 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_CATE, -1)
+                val roadCate = readRoadCate(intent)
 
                 _naviStateFlow.value = current.copy(
                     navValid = true,
@@ -47,23 +48,35 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                     cameraDistance = cameraDistance,
                     tbtDistance = tbtDistance,
                     tbtTurnType = tbtTurnType,
-                    isHighway = (roadCate == 0),
+                    isHighway = RoadCate.isHighway(roadCate),
+                    timestamp = nowMs
+                )
+            }
+            AmapContract.KEY_TYPE_DRIVE_WAY -> {
+                // 13012: 车道级拓扑广播，EXTRA_DRIVE_WAY 为 JSON 对象
+                val driveWayRaw = intent.getStringExtra(AmapContract.EXTRA_DRIVE_WAY)
+                    ?: intent.getStringExtra("driveWay") ?: current.driveWayRaw
+                val parsed = LaneWayParser.parse(driveWayRaw)
+                _naviStateFlow.value = current.copy(
+                    driveWayRaw = driveWayRaw,
+                    suggestLanes = parsed.suggest,
+                    disableLanes = parsed.disable,
                     timestamp = nowMs
                 )
             }
             AmapContract.KEY_TYPE_LANE, AmapContract.KEY_TYPE_TRAFFIC_LIGHT -> {
-                // 10019 / 10020: 车道拓扑与红绿灯倒计时广播
+                // 10019 / 10020: 文档 14 声明值，保留兼容；载荷同样兼容 JSON 与竖线串
                 val driveWayRaw = intent.getStringExtra(AmapContract.EXTRA_DRIVE_WAY)
                     ?: intent.getStringExtra("driveWay") ?: current.driveWayRaw
                 val trafficLightSeconds = intent.getIntExtra("redLightCountDownSeconds", -1).takeIf { it >= 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_TRAFFIC_LIGHT_SECONDS, current.trafficLightSeconds)
                 val trafficLightStatus = intent.getIntExtra("trafficLightStatus", current.trafficLightStatus)
 
-                val parsed = if (driveWayRaw.isNotEmpty()) tech.touka.amapnavi.core.util.LaneWayParser.parse(driveWayRaw) else null
+                val parsed = LaneWayParser.parse(driveWayRaw)
                 _naviStateFlow.value = current.copy(
                     driveWayRaw = driveWayRaw,
-                    suggestLanes = parsed?.suggest ?: current.suggestLanes,
-                    disableLanes = parsed?.disable ?: current.disableLanes,
+                    suggestLanes = parsed.suggest,
+                    disableLanes = parsed.disable,
                     trafficLightSeconds = trafficLightSeconds,
                     trafficLightStatus = trafficLightStatus,
                     timestamp = nowMs
@@ -83,8 +96,7 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                     ?: intent.getIntExtra(AmapContract.EXTRA_SEG_REMAIN_DIS, 0)
                 val tbtTurnType = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_TURN_TYPE, 0)
-                val roadCate = intent.getIntExtra("ROAD_CATE", -1).takeIf { it != -1 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_CATE, -1)
+                val roadCate = readRoadCate(intent)
                 val trafficLightSeconds = intent.getIntExtra("redLightCountDownSeconds", -1).takeIf { it >= 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_TRAFFIC_LIGHT_SECONDS, -1)
                 val trafficLightStatus = intent.getIntExtra("trafficLightStatus", 0)
@@ -103,6 +115,16 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                 )
             }
         }
+    }
+
+    /**
+     * 原版 APK 读取的是 ROAD_TYPE（原始等级），再经 roadcate_conv 转换：
+     * 0→1、6→0、1→2、其它→8；高速判定为 roadcate ∈ {0,1}。
+     */
+    private fun readRoadCate(intent: Intent): Int {
+        val roadType = intent.getIntExtra("ROAD_TYPE", -1).takeIf { it != -1 }
+            ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_CATE, -1)
+        return if (roadType >= 0) RoadCate.conv(roadType) else -1
     }
 
     /**

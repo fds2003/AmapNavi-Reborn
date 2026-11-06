@@ -13,7 +13,8 @@ import tech.touka.amapnavi.core.model.CarState
 class LateralSafetyEvaluator(
     private val minSafeTimeHeadway: Float = 2.0f,
     private val minStaticClearanceM: Float = 10.0f,
-    private val minSafeTtcSeconds: Float = 2.5f
+    private val minSafeTtcSeconds: Float = 2.5f,
+    private val minTargetLaneClearanceM: Float = 20.0f
 ) {
 
     fun evaluateSide(action: LaneAction, car: CarState, isTargetSolid: Boolean): SafetyAuditResult {
@@ -22,6 +23,16 @@ class LateralSafetyEvaluator(
                 isSafe = false,
                 blockCause = BlockCause.NO_TARGET_LANE,
                 reasonDesc = "未指定目标车道"
+            )
+        }
+
+        // 0. 目标侧前角雷达盲区（原版 APK LaneChangeSafetyCheckRaw 返回 -2，优先级最高）
+        val frontBlind = if (action == LaneAction.LEFT) car.leftFrontBlind else car.rightFrontBlind
+        if (frontBlind) {
+            return SafetyAuditResult(
+                isSafe = false,
+                blockCause = BlockCause.FRONT_BLIND,
+                reasonDesc = "目标侧前角雷达盲区报警，禁止变道"
             )
         }
 
@@ -58,6 +69,18 @@ class LateralSafetyEvaluator(
                 blockCause = BlockCause.LIDAR_HAZARD,
                 isLidarBlocked = true,
                 reasonDesc = "激光雷达侧后盲区报警"
+            )
+        }
+
+        // 3.5 目标车道前车占用（原版 sideFrontMinDist 语义，normal=20m）
+        val targetLead = if (action == LaneAction.LEFT) car.leftLead else car.rightLead
+        val targetLeadDist = if (action == LaneAction.LEFT) car.leftLeadDistance else car.rightLeadDistance
+        // fail-closed：报有车但距离缺失/为 0 时同样阻断
+        if (targetLead && targetLeadDist < minTargetLaneClearanceM) {
+            return SafetyAuditResult(
+                isSafe = false,
+                blockCause = BlockCause.TARGET_LANE_OCCUPIED,
+                reasonDesc = "目标车道前车过近(${formatDistance(targetLeadDist)}m < 门限:${formatDistance(minTargetLaneClearanceM)}m)"
             )
         }
 

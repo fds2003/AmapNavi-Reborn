@@ -23,6 +23,18 @@ data class CarState(
     val vrel: Float = 0f,                   // 前车相对速度 (km/h，C3 实发单位，负值表示逼近)
     val vLead: Int = 0,                     // 前车绝对车速 (km/h)
 
+    // 目标侧前角雷达盲区 (C3 l_front_blind / r_front_blind)
+    val leftFrontBlind: Boolean = false,    // 左前角雷达盲区报警
+    val rightFrontBlind: Boolean = false,   // 右前角雷达盲区报警
+
+    // 目标车道前车 (C3 l_lead / r_lead)
+    val leftLead: Boolean = false,          // 左侧目标车道有前车
+    val leftLeadDistance: Float = 0f,       // 左侧前车距离 (米)，0 = 无/失效
+    val leftLeadVrel: Float = 0f,           // 左侧前车相对速度 (km/h)
+    val rightLead: Boolean = false,         // 右侧目标车道有前车
+    val rightLeadDistance: Float = 0f,      // 右侧前车距离 (米)
+    val rightLeadVrel: Float = 0f,          // 右侧前车相对速度 (km/h)
+
     // 盲区与毫米波雷达 (BSD)
     val leftBlindspot: Boolean = false,     // 左侧盲区毫米波是否报警
     val rightBlindspot: Boolean = false,    // 右侧盲区毫米波是否报警

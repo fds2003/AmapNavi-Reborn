@@ -46,20 +46,17 @@ class AmapBroadcastDecoderTest {
     }
 
     @Test
-    fun `道路等级为0时判定高速`() {
-        val highway = AmapBroadcastCodec.decode(
+    fun `道路等级0和1均判定高速`() {
+        fun decode(cate: Int) = AmapBroadcastCodec.decode(
             driveWayRaw = "L|S|R", roadLimitSpeed = 100, cameraSpeedLimit = 0,
-            cameraDistance = 0, tbtDistance = 1000, tbtTurnType = 1, roadCate = 0,
+            cameraDistance = 0, tbtDistance = 1000, tbtTurnType = 1, roadCate = cate,
             trafficLightSeconds = -1, trafficLightStatus = 0, nowMs = now
         )
-        assertTrue(highway.isHighway)
-
-        val urban = AmapBroadcastCodec.decode(
-            driveWayRaw = "L|S|R", roadLimitSpeed = 60, cameraSpeedLimit = 0,
-            cameraDistance = 0, tbtDistance = 1000, tbtTurnType = 1, roadCate = 1,
-            trafficLightSeconds = -1, trafficLightStatus = 0, nowMs = now
-        )
-        assertFalse(urban.isHighway)
+        // 原版 APK：roadcate_conv 之后 isHighway = (roadcate == 0 || roadcate == 1)
+        assertTrue(decode(0).isHighway)
+        assertTrue(decode(1).isHighway)
+        assertFalse(decode(2).isHighway)
+        assertFalse(decode(8).isHighway)
     }
 
     @Test
