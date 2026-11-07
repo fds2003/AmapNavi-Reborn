@@ -121,7 +121,10 @@ class UserSettingsRepository(context: Context) {
     private var cachedOvertakeSettings: OvertakeSettings = loadOvertakeSettings()
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == KEY_OVERTAKE_ENABLED || key == KEY_REVERSE_COOLDOWN_S || key == "allow_right_overtake") {
+        if (key == KEY_OVERTAKE_ENABLED || key == KEY_REVERSE_COOLDOWN_S || key == "allow_right_overtake" ||
+            key == KEY_OVERTAKE_MODE || key == KEY_REAR_THRESH_VAL || key == KEY_REAR_VREL_TIME ||
+            key == KEY_FRONT_THRESH_VAL || key == "overtake_min_speed" ||
+            key == "overtake_interrupt_cooldown_s") {
             cachedOvertakeSettings = loadOvertakeSettings()
         }
     }
@@ -158,10 +161,22 @@ class UserSettingsRepository(context: Context) {
     fun setAllowRightOvertake(allow: Boolean) = setBoolean("allow_right_overtake", allow)
 
     private fun loadOvertakeSettings(): OvertakeSettings {
+        // GAP-1/UX-3：把 6 个雷达 KEY + 风格三档 + 接管惩罚 + 准入车速真正读进设置
+        val mode = prefs.getInt(KEY_OVERTAKE_MODE, 1)                 // 0激进 1常规 2保守
+        val ttcByMode = when (mode) { 0 -> 1.8f; 2 -> 3.5f; else -> 2.5f }
+        val rearVal = prefs.getFloat(KEY_REAR_THRESH_VAL, 10.0f)
+        val rearTime = prefs.getFloat(KEY_REAR_VREL_TIME, 2.0f)
+        val frontVal = prefs.getFloat(KEY_FRONT_THRESH_VAL, 20.0f)
         return OvertakeSettings(
             enabled = prefs.getBoolean(KEY_OVERTAKE_ENABLED, true),
+            minEngageSpeedKmh = prefs.getInt("overtake_min_speed", 60),
             standardCooldownMs = prefs.getInt(KEY_REVERSE_COOLDOWN_S, 20) * 1000L,
-            allowRightOvertake = prefs.getBoolean("allow_right_overtake", false)
+            interruptCooldownMs = prefs.getInt("overtake_interrupt_cooldown_s", 20) * 1000L,
+            allowRightOvertake = prefs.getBoolean("allow_right_overtake", false),
+            minSafeTtcSeconds = ttcByMode,
+            minRearClearanceM = rearVal,
+            minRearTimeHeadway = rearTime,
+            minFrontClearanceM = frontVal
         )
     }
 }

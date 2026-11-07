@@ -54,6 +54,9 @@ class OvertakeStateMachine(
     fun tick(car: CarState, navi: NaviState, settings: OvertakeSettings): OvertakeStatus {
         val now = clock()
 
+        // GAP-1：把最新设置的安全阈值注入侧向评估器（原为硬编码，调参无效）
+        safetyEvaluator.updateThresholds(settings)
+
         // 第一层防御：协议看门狗，遥测中断立即熔断
         if (!car.isTelemetryFresh(now, settings.telemetryTimeoutMs)) {
             return onTelemetryLost(settings.telemetryTimeoutMs)

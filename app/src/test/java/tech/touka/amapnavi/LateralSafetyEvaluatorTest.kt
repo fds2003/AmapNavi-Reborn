@@ -7,6 +7,7 @@ import org.junit.Test
 import tech.touka.amapnavi.core.event.BlockCause
 import tech.touka.amapnavi.core.event.LaneAction
 import tech.touka.amapnavi.core.model.CarState
+import tech.touka.amapnavi.core.model.OvertakeSettings
 import tech.touka.amapnavi.domain.safety.LateralSafetyEvaluator
 
 /**
@@ -131,12 +132,12 @@ class LateralSafetyEvaluatorTest {
 
     @Test
     fun `后向TTC失效时_即使距离充足也阻断`() {
-        // C3 语义：0.0 表示无有效回波，必须 fail-closed
+        // C3 语义：0.0 表示无有效回波（无激光雷达/无数据），必须 fail-closed
         val result = evaluator.evaluateSide(
             LaneAction.LEFT, car(lidarBehindVdistTime = 0f, leftRearDistance = 80f), isTargetSolid = false
         )
         assertFalse(result.isSafe)
-        assertEquals(BlockCause.LIDAR_HAZARD, result.blockCause)
+        assertEquals(BlockCause.LIDAR_UNAVAILABLE, result.blockCause)
         assertTrue(result.isLidarBlocked)
     }
 
@@ -231,5 +232,31 @@ class LateralSafetyEvaluatorTest {
             isTargetSolid = false
         )
         assertTrue(result.isSafe)
+    }
+
+    // ---- GAP-1：用户安全阈值真正接入评估器 ----
+    @Test
+    fun `updateThresholds收紧TTC门限后阻断`() {
+        val ev = LateralSafetyEvaluator()
+        // 默认 2.5s：后向 TTC 3s 通过
+        val okBefore = ev.evaluateSide(
+            LaneAction.LEFT, car(lidarBehindVdistTime = 3f, leftRearDistance = 80f), false)
+        assertTrue(okBefore.isSafe)
+        // 收紧到 3.5s（保守风格）：同样 3s TTC 应被阻断
+        ev.updateThresholds(OvertakeSettings(minSafeTtcSeconds = 3.5f))
+        val blocked = ev.evaluateSide(
+            LaneAction.LEFT, car(lidarBehindVdistTime = 3f, leftRearDistance = 80f), false)
+        assertFalse(blocked.isSafe)
+        assertEquals(BlockCause.LIDAR_HAZARD, blocked.blockCause)
+    }
+
+    @Test
+    fun `updateThresholds收紧目标车道净空后阻断`() {
+        val ev = LateralSafetyEvaluator()
+        // 默认 20m：前车 15m 阻断；放宽到 10m 后 15m 通过
+        ev.updateThresholds(OvertakeSettings(minFrontClearanceM = 10f))
+        val r = ev.evaluateSide(
+            LaneAction.LEFT, car(leftLead = true, leftLeadDistance = 15f), false)
+        assertTrue(r.isSafe)
     }
 }

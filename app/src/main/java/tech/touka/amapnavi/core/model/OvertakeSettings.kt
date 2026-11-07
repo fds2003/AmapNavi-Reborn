@@ -15,5 +15,10 @@ data class OvertakeSettings(
     val telemetryTimeoutMs: Long = 1000L,
     val executeTimeoutMs: Long = 4500L,
     val driverSteerThresholdDeg: Float = 25f,
-    val allowRightOvertake: Boolean = false
+    val allowRightOvertake: Boolean = false,
+    // GAP-1：可配安全阈值（对应 6 个雷达 KEY + 风格三档 + 接管惩罚 + 准入车速）
+    val minSafeTtcSeconds: Float = 2.5f,          // 后向 TTC 门限（风格 0=1.8/1=2.5/2=3.5）
+    val minRearClearanceM: Float = 10.0f,         // 后向静态净空（KEY_REAR_THRESH_VAL）
+    val minRearTimeHeadway: Float = 2.0f,         // 后向动态时距（KEY_REAR_VREL_TIME）
+    val minFrontClearanceM: Float = 20.0f,        // 目标车道前车净空（KEY_FRONT_THRESH_VAL）
 )

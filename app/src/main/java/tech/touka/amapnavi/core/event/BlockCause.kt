@@ -10,6 +10,7 @@ enum class BlockCause {
     SOLID_LINE,
     BSD_ALARM,
     LIDAR_HAZARD,
+    LIDAR_UNAVAILABLE,
     COOLDOWN,
     NO_TARGET_LANE,
     ROUTE_INVALID,

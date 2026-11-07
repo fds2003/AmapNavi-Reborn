@@ -3,19 +3,33 @@ package tech.touka.amapnavi.domain.safety
 import tech.touka.amapnavi.core.event.BlockCause
 import tech.touka.amapnavi.core.event.LaneAction
 import tech.touka.amapnavi.core.model.CarState
+import tech.touka.amapnavi.core.model.OvertakeSettings
 
 /**
  * 多传感器融合侧向安全评估器（纯 Kotlin）。
  *
  * 熔断优先级：实线标线 > 毫米波 BSD 盲区 > 激光雷达盲区标志 > 后向 TTC > 动态制动安全净空。
  * 任何一项不满足即 100% 阻断变道；传感器失效（TTC<=0 或距离缺键）同样阻断。
+ *
+ * 阈值可经 [updateThresholds] 由 [OvertakeSettings] 实时覆盖（GAP-1）。
  */
 class LateralSafetyEvaluator(
-    private val minSafeTimeHeadway: Float = 2.0f,
-    private val minStaticClearanceM: Float = 10.0f,
-    private val minSafeTtcSeconds: Float = 2.5f,
-    private val minTargetLaneClearanceM: Float = 20.0f
+    private var minSafeTimeHeadway: Float = 2.0f,
+    private var minStaticClearanceM: Float = 10.0f,
+    private var minSafeTtcSeconds: Float = 2.5f,
+    private var minTargetLaneClearanceM: Float = 20.0f
 ) {
+
+    /**
+     * GAP-1：把用户设置的安全阈值注入评估器（原为硬编码，调参无效）。
+     * 由 RelayEngine 在每次 tick 前按最新 settings 调用。
+     */
+    fun updateThresholds(settings: OvertakeSettings) {
+        minSafeTimeHeadway = settings.minRearTimeHeadway
+        minStaticClearanceM = settings.minRearClearanceM
+        minSafeTtcSeconds = settings.minSafeTtcSeconds
+        minTargetLaneClearanceM = settings.minFrontClearanceM
+    }
 
     fun evaluateSide(action: LaneAction, car: CarState, isTargetSolid: Boolean): SafetyAuditResult {
         if (action == LaneAction.KEEP) {
@@ -90,9 +104,9 @@ class LateralSafetyEvaluator(
         if (behindTtc <= 0f) {
             return SafetyAuditResult(
                 isSafe = false,
-                blockCause = BlockCause.LIDAR_HAZARD,
+                blockCause = BlockCause.LIDAR_UNAVAILABLE,
                 isLidarBlocked = true,
-                reasonDesc = "后向TTC失效或无有效回波，按失效必阻断处理"
+                reasonDesc = "无有效后向激光雷达数据（TTC 无效），默认禁止超车"
             )
         }
         if (behindTtc < minSafeTtcSeconds) {
