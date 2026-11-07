@@ -11,5 +11,7 @@ enum class SoundEvent(val fileName: String) {
     LANE_CHANGE_CANCEL("audio_lane_change_cancel.wav"),
     SOLID_BLOCKED("audio_solid_blocked.wav"),
     CAR_WATCHOUT("audio_car_watchout.wav"),
-    TRAFFIC_SIGN_GREEN("traffic_sign_green.wav")
+    TRAFFIC_SIGN_GREEN("traffic_sign_green.wav"),
+    LINK_WEAK("warning_soft.wav"),
+    LINK_LOST("warning_immediate.wav")
 }

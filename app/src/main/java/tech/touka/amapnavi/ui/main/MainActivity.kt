@@ -27,6 +27,7 @@ import tech.touka.amapnavi.core.model.CarState
 import tech.touka.amapnavi.core.model.NaviState
 import tech.touka.amapnavi.core.util.LaneWayParser
 import tech.touka.amapnavi.data.relay.RelayEngine
+import tech.touka.amapnavi.data.relay.LinkHealthLevel
 import tech.touka.amapnavi.data.udp.C3Device
 import tech.touka.amapnavi.service.KeepAliveService
 import tech.touka.amapnavi.ui.setting.SettingActivity
@@ -269,6 +270,9 @@ class MainActivity : AppCompatActivity() {
             engine.deviceFlow.collect { device -> renderDevice(device) }
         }
         uiScope.launch {
+            engine.linkHealthFlow.collect { level -> renderLinkHealth(level) }
+        }
+        uiScope.launch {
             engine.plannedRampSpeedFlow.collect { speed ->
                 plannedRampSpeed = speed
                 refreshTbtLine()
@@ -463,6 +467,24 @@ class MainActivity : AppCompatActivity() {
         } else {
             tvDeviceStatus.text = "C3 ${device.ip}"
             tvDeviceStatus.setTextColor(color(R.color.success_green))
+        }
+        renderLinkHealth(LinkHealthLevel.STABLE)
+    }
+
+    /** E4：三档链路健康着色。LOST 红常亮、WEAK 黄、STABLE 绿（不覆盖 deviceFlow 的 IP 文本）。 */
+    private fun renderLinkHealth(level: LinkHealthLevel) {
+        when (level) {
+            LinkHealthLevel.LOST -> {
+                tvDeviceStatus.setTextColor(color(R.color.danger_red))
+                if (!tvDeviceStatus.text.startsWith("C3 断联")) {
+                    tvDeviceStatus.text = "C3 断联！请接管"
+                }
+            }
+            LinkHealthLevel.WEAK -> tvDeviceStatus.setTextColor(color(R.color.warning_amber))
+            LinkHealthLevel.STABLE -> {
+                tvDeviceStatus.setTextColor(color(R.color.success_green))
+                if (tvDeviceStatus.text == "C3 断联！请接管") tvDeviceStatus.text = "C3 "
+            }
         }
     }
 

@@ -14,6 +14,10 @@ class TelemetryWatchdog(private val timeoutMs: Long) {
     private var lastTelemetryAt = 0L
     private var tripped = false
 
+    /** 最近一次遥测时间戳；从未收包为 0（E4 链路分级据此计算 elapsedMs）。 */
+    @Synchronized
+    fun lastTelemetryAtMs(): Long = lastTelemetryAt
+
     /** 收到遥测包：刷新时间戳并重新武装。UDP 线程调用。 */
     @Synchronized
     fun onTelemetry(nowMs: Long) {

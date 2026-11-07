@@ -91,6 +91,14 @@ class RelayEngine private constructor(context: Context) {
     private val _plannedRampSpeedFlow = MutableStateFlow(0)
     val plannedRampSpeedFlow: StateFlow<Int> = _plannedRampSpeedFlow
 
+    /** E4：UDP 链路健康三档（STABLE/WEAK/LOST），由遥测看门狗每 100ms 分类。 */
+    private val _linkHealthFlow = MutableStateFlow(LinkHealthLevel.STABLE)
+    val linkHealthFlow: StateFlow<LinkHealthLevel> = _linkHealthFlow
+
+    private val linkClassifier = LinkHealthClassifier()
+    private var linkLastLevel = LinkHealthLevel.STABLE
+    private var linkLastLostAt = 0L
+
     private val udpClient = CarrotUdpClient(
         scope = scope,
         onTelemetryPayload = { payload -> onTelemetry(payload) }
@@ -175,6 +183,9 @@ class RelayEngine private constructor(context: Context) {
         telemetryWatchdogJob?.cancel()
         telemetryWatchdogJob = null
         telemetryWatchdog.reset()
+        _linkHealthFlow.value = LinkHealthLevel.STABLE
+        linkLastLevel = LinkHealthLevel.STABLE
+        linkLastLostAt = 0L
         stateMachine.reset()
         _carStateFlow.value = CarState()
         _overtakeStatusFlow.value = stateMachine.status()
@@ -276,10 +287,41 @@ class RelayEngine private constructor(context: Context) {
             while (isActive) {
                 delay(100L)
                 if (!running) continue
-                if (telemetryWatchdog.shouldTrip(SystemClock.elapsedRealtime())) {
+                val now = SystemClock.elapsedRealtime()
+                if (telemetryWatchdog.shouldTrip(now)) {
                     _overtakeStatusFlow.value = stateMachine.onTelemetryLost(TELEMETRY_TIMEOUT_MS)
                 }
+                updateLinkHealth(now)
             }
+        }
+    }
+
+    /**
+     * E4：按「距上次遥测包」时长把链路分为 STABLE/WEAK/LOST 三档。
+     * - WEAK 首次进入：语音「C3 信号弱」（LINK_WEAK）
+     * - LOST 首次进入：语音「智驾断联，请接管」（LINK_LOST）+ 自动发 CANCEL 撤销执行中变道
+     * - 恢复 STABLE：复位。同档内不重复发声/取消。
+     */
+    private fun updateLinkHealth(nowMs: Long) {
+        // 未建立过连接（无设备/无遥测）保持 STABLE，不误报
+        if (telemetryWatchdog.lastTelemetryAtMs() == 0L) {
+            _linkHealthFlow.value = LinkHealthLevel.STABLE
+            linkLastLevel = LinkHealthLevel.STABLE
+            return
+        }
+        val level = linkClassifier.classify(nowMs - telemetryWatchdog.lastTelemetryAtMs())
+        val changed = level != linkLastLevel
+        linkLastLevel = level
+        _linkHealthFlow.value = level
+        if (!changed) return
+        when (level) {
+            LinkHealthLevel.WEAK -> soundEngine.play(SoundEvent.LINK_WEAK)
+            LinkHealthLevel.LOST -> {
+                soundEngine.play(SoundEvent.LINK_LOST)
+                udpClient.sendControlCommand(CANCEL_COMMAND, LaneAction.KEEP, 0)
+                linkLastLostAt = nowMs
+            }
+            LinkHealthLevel.STABLE -> { /* 恢复，无需动作 */ }
         }
     }
 
