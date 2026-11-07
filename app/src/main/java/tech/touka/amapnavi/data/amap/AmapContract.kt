@@ -24,4 +24,22 @@ object AmapContract {
     const val EXTRA_ROAD_TYPE = "ROAD_TYPE"   // 原版 APK 实际读取的道路等级键
     const val EXTRA_TRAFFIC_LIGHT_SECONDS = "EXTRA_TRAFFIC_LIGHT_SECONDS"
     const val EXTRA_TRAFFIC_LIGHT_STATUS = "EXTRA_TRAFFIC_LIGHT_STATUS"
+    const val EXTRA_ROUTE_REMAIN_DIS = "ROUTE_REMAIN_DIS"
+    const val EXTRA_ROUTE_REMAIN_TIME = "ROUTE_REMAIN_TIME"
+    const val EXTRA_NEXT_ROAD_NAME = "NEXT_ROAD_NAME"
+    const val EXTRA_CUR_ROAD_NAME = "CUR_ROAD_NAME"
+    const val EXTRA_STATE = "EXTRA_STATE"
+    const val EXTRA_CUR_SPEED = "CUR_SPEED"
+    const val EXTRA_ROUTE_ALL_DIS = "ROUTE_ALL_DIS"
+    const val EXTRA_SEG_REMAIN_TIME = "SEG_REMAIN_TIME"
+    const val EXTRA_ETA_TEXT = "ETA_TEXT"
+    const val EXTRA_CAR_DIRECTION = "CAR_DIRECTION"
+    const val EXTRA_TRAFFIC_LIGHT_NUM = "TRAFFIC_LIGHT_NUM"
+    const val EXTRA_ROUTE_REMAIN_TRAFFIC_LIGHT_NUM = "routeRemainTrafficLightNum"
+    const val EXTRA_CAMERA_TYPE = "CAMERA_TYPE"
+    const val EXTRA_CAMERA_ID = "cameraID"
+
+    const val STATE_START_NAVI = 8
+    const val STATE_END_NAVI = 9
+    const val STATE_EXIT_APP = 0
 }

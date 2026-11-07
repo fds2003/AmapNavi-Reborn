@@ -77,16 +77,20 @@ class SettingActivity : AppCompatActivity() {
         btnTabNav.isSelected = (tabIndex == 1)
         btnTabOvertake.isSelected = (tabIndex == 2)
 
+        // 先初始化目标 Tab（必要时 inflate ViewStub），再切换显示，避免白屏一帧
+        when (tabIndex) {
+            0 -> if (!generalInitialized) { generalInitialized = true; init100PercentOriginalGeneralTab() }
+            1 -> if (!navInitialized) { navInitialized = true; inflateStub(R.id.stub_tab_nav); initNavTab() }
+            2 -> if (!overtakeInitialized) { overtakeInitialized = true; inflateStub(R.id.stub_tab_overtake); initOvertakeTab() }
+        }
+
         if (flipper.displayedChild != tabIndex) {
             flipper.displayedChild = tabIndex
         }
+    }
 
-        // 按需懒加载各 Tab 控件，进入通用参数秒开零卡顿！
-        when (tabIndex) {
-            0 -> if (!generalInitialized) { generalInitialized = true; init100PercentOriginalGeneralTab() }
-            1 -> if (!navInitialized) { navInitialized = true; initNavTab() }
-            2 -> if (!overtakeInitialized) { overtakeInitialized = true; initOvertakeTab() }
-        }
+    private fun inflateStub(id: Int) {
+        findViewById<android.view.ViewStub>(id)?.inflate()
     }
 
     private fun init100PercentOriginalGeneralTab() {

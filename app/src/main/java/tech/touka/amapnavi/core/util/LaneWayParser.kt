@@ -44,9 +44,11 @@ object LaneWayParser {
 
     // 高德 13012 的车道拓扑是 JSON 对象（不是文档 14 所述的竖线串）。
     // schema 固定且由高德生成，这里用轻量正则解析，保持本文件纯 Kotlin、可在 JVM 单测运行。
+    // 注意：Android 4.4 的 Pattern 要求把字符类外的 } 和 ] 显式转义，否则抛
+    // PatternSyntaxException（JVM 8+ 不会，容易漏测）。
     private val JSON_ENABLED = Regex("\"drive_way_enabled\"\\s*:\\s*(true|false)")
-    private val JSON_INFO = Regex("\"drive_way_info\"\\s*:\\s*\\[(.*?)]", RegexOption.DOT_MATCHES_ALL)
-    private val JSON_OBJ = Regex("\\{([^{}]*)}")
+    private val JSON_INFO = Regex("\"drive_way_info\"\\s*:\\s*\\[(.*?)\\]", RegexOption.DOT_MATCHES_ALL)
+    private val JSON_OBJ = Regex("\\{([^{}]*)\\}")
     private val JSON_ICON = Regex("\"drive_way_lane_Back_icon\"\\s*:\\s*\"?(-?\\d+)\"?")
     private val JSON_ADVISED = Regex("\"trafficLaneAdvised\"\\s*:\\s*(true|false)")
 

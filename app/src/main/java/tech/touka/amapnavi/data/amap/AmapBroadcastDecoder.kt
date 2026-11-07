@@ -40,14 +40,64 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                 val tbtTurnType = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_TURN_TYPE, 0)
                 val roadCate = readRoadCate(intent)
+                val routeRemainDistance = intent.getIntExtra(
+                    AmapContract.EXTRA_ROUTE_REMAIN_DIS, current.routeRemainDistance
+                )
+                val routeRemainTime = intent.getIntExtra(
+                    AmapContract.EXTRA_ROUTE_REMAIN_TIME, current.routeRemainTime
+                )
+                val nextRoadName = intent.getStringExtra(AmapContract.EXTRA_NEXT_ROAD_NAME)
+                    ?: current.nextRoadName
+                val currentRoadName = intent.getStringExtra(AmapContract.EXTRA_CUR_ROAD_NAME)
+                    ?: current.currentRoadName
+                val trafficLightSeconds = intent.getIntExtra(
+                    "redLightCountDownSeconds", current.trafficLightSeconds
+                )
+                val trafficLightStatus = intent.getIntExtra(
+                    "trafficLightStatus", current.trafficLightStatus
+                )
+                val curSpeed = intent.getIntExtra(AmapContract.EXTRA_CUR_SPEED, current.curSpeed)
+                val routeTotalDistance = intent.getIntExtra(
+                    AmapContract.EXTRA_ROUTE_ALL_DIS, current.routeTotalDistance
+                )
+                val segRemainTime = intent.getIntExtra(
+                    AmapContract.EXTRA_SEG_REMAIN_TIME, current.segRemainTime
+                )
+                val etaText = intent.getStringExtra(AmapContract.EXTRA_ETA_TEXT) ?: current.etaText
+                val carDirection = intent.getIntExtra(
+                    AmapContract.EXTRA_CAR_DIRECTION, current.carDirection
+                )
+                val trafficLightNum = intent.getIntExtra(
+                    AmapContract.EXTRA_TRAFFIC_LIGHT_NUM, current.trafficLightNum
+                )
+                val routeRemainTrafficLightNum = intent.getIntExtra(
+                    AmapContract.EXTRA_ROUTE_REMAIN_TRAFFIC_LIGHT_NUM, current.routeRemainTrafficLightNum
+                )
+                val cameraType = intent.getIntExtra(AmapContract.EXTRA_CAMERA_TYPE, current.cameraType)
+                val cameraId = intent.getStringExtra(AmapContract.EXTRA_CAMERA_ID) ?: current.cameraId
 
                 _naviStateFlow.value = current.copy(
-                    navValid = true,
+                    navValid = readNavValid(intent, default = true),
+                    currentRoadName = currentRoadName,
+                    nextRoadName = nextRoadName,
+                    segRemainTime = segRemainTime,
+                    curSpeed = curSpeed,
+                    routeTotalDistance = routeTotalDistance,
+                    routeRemainDistance = routeRemainDistance,
+                    routeRemainTime = routeRemainTime,
+                    etaText = etaText,
+                    carDirection = carDirection,
+                    trafficLightNum = trafficLightNum,
+                    routeRemainTrafficLightNum = routeRemainTrafficLightNum,
+                    cameraType = cameraType,
+                    cameraId = cameraId,
                     roadSpeedLimit = roadLimitSpeed,
                     cameraSpeedLimit = cameraSpeedLimit,
                     cameraDistance = cameraDistance,
                     tbtDistance = tbtDistance,
                     tbtTurnType = tbtTurnType,
+                    trafficLightSeconds = trafficLightSeconds,
+                    trafficLightStatus = trafficLightStatus,
                     isHighway = RoadCate.isHighway(roadCate),
                     timestamp = nowMs
                 )
@@ -74,6 +124,7 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
 
                 val parsed = LaneWayParser.parse(driveWayRaw)
                 _naviStateFlow.value = current.copy(
+                    navValid = readNavValid(intent, default = current.navValid),
                     driveWayRaw = driveWayRaw,
                     suggestLanes = parsed.suggest,
                     disableLanes = parsed.disable,
@@ -100,6 +151,35 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                 val trafficLightSeconds = intent.getIntExtra("redLightCountDownSeconds", -1).takeIf { it >= 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_TRAFFIC_LIGHT_SECONDS, -1)
                 val trafficLightStatus = intent.getIntExtra("trafficLightStatus", 0)
+                val routeRemainDistance = intent.getIntExtra(
+                    AmapContract.EXTRA_ROUTE_REMAIN_DIS, current.routeRemainDistance
+                )
+                val routeRemainTime = intent.getIntExtra(
+                    AmapContract.EXTRA_ROUTE_REMAIN_TIME, current.routeRemainTime
+                )
+                val nextRoadName = intent.getStringExtra(AmapContract.EXTRA_NEXT_ROAD_NAME)
+                    ?: current.nextRoadName
+                val currentRoadName = intent.getStringExtra(AmapContract.EXTRA_CUR_ROAD_NAME)
+                    ?: current.currentRoadName
+                val curSpeed = intent.getIntExtra(AmapContract.EXTRA_CUR_SPEED, current.curSpeed)
+                val routeTotalDistance = intent.getIntExtra(
+                    AmapContract.EXTRA_ROUTE_ALL_DIS, current.routeTotalDistance
+                )
+                val segRemainTime = intent.getIntExtra(
+                    AmapContract.EXTRA_SEG_REMAIN_TIME, current.segRemainTime
+                )
+                val etaText = intent.getStringExtra(AmapContract.EXTRA_ETA_TEXT) ?: current.etaText
+                val carDirection = intent.getIntExtra(
+                    AmapContract.EXTRA_CAR_DIRECTION, current.carDirection
+                )
+                val trafficLightNum = intent.getIntExtra(
+                    AmapContract.EXTRA_TRAFFIC_LIGHT_NUM, current.trafficLightNum
+                )
+                val routeRemainTrafficLightNum = intent.getIntExtra(
+                    AmapContract.EXTRA_ROUTE_REMAIN_TRAFFIC_LIGHT_NUM, current.routeRemainTrafficLightNum
+                )
+                val cameraType = intent.getIntExtra(AmapContract.EXTRA_CAMERA_TYPE, current.cameraType)
+                val cameraId = intent.getStringExtra(AmapContract.EXTRA_CAMERA_ID) ?: current.cameraId
                 _naviStateFlow.value = AmapBroadcastCodec.decode(
                     driveWayRaw = driveWayRaw,
                     roadLimitSpeed = roadLimitSpeed,
@@ -111,7 +191,21 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                     trafficLightSeconds = trafficLightSeconds,
                     trafficLightStatus = trafficLightStatus,
                     nowMs = nowMs,
-                    previous = _naviStateFlow.value
+                    previous = _naviStateFlow.value,
+                    routeRemainDistance = routeRemainDistance,
+                    routeRemainTime = routeRemainTime,
+                    nextRoadName = nextRoadName,
+                    currentRoadName = currentRoadName,
+                    navValid = readNavValid(intent, default = current.navValid),
+                    curSpeed = curSpeed,
+                    routeTotalDistance = routeTotalDistance,
+                    segRemainTime = segRemainTime,
+                    etaText = etaText,
+                    carDirection = carDirection,
+                    trafficLightNum = trafficLightNum,
+                    routeRemainTrafficLightNum = routeRemainTrafficLightNum,
+                    cameraType = cameraType,
+                    cameraId = cameraId
                 )
             }
         }
@@ -125,6 +219,18 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
         val roadType = intent.getIntExtra("ROAD_TYPE", -1).takeIf { it != -1 }
             ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_CATE, -1)
         return if (roadType >= 0) RoadCate.conv(roadType) else -1
+    }
+
+    /**
+     * 高德 EXTRA_STATE：8=开始导航，9=结束导航，0=退出。
+     * 未携带时使用调用方给的默认值。
+     */
+    private fun readNavValid(intent: Intent, default: Boolean): Boolean {
+        return when (intent.getIntExtra(AmapContract.EXTRA_STATE, Int.MIN_VALUE)) {
+            AmapContract.STATE_START_NAVI -> true
+            AmapContract.STATE_END_NAVI, AmapContract.STATE_EXIT_APP -> false
+            else -> default
+        }
     }
 
     /**

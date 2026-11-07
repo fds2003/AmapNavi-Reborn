@@ -53,6 +53,17 @@ class UserSettingsRepository(context: Context) {
         const val KEY_OFFSET_ROAD = "offset_road"
         const val KEY_TOP_PAD_DP = "top_pad_dp"
 
+        // 原厂仪表 Keys
+        const val KEY_CLUSTER_ENABLE = "cluster_enable"
+        const val KEY_CLUSTER_TBT_ENABLE = "cluster_tbt_enable"
+        const val KEY_CLUSTER_SPEED_ENABLE = "cluster_speed_enable"
+        const val KEY_CLUSTER_EST_ENABLE = "cluster_est_enable"
+        const val KEY_CLUSTER_TEXT_ENABLE = "cluster_text_enable"
+        const val KEY_CLUSTER_TL_ENABLE = "cluster_tl_enable"
+        const val KEY_CLUSTER_ETA_MODE = "cluster_eta_mode"
+        const val KEY_CLUSTER_ICON_EXPERIMENTAL = "cluster_icon_experimental"
+        const val KEY_CLUSTER_ADA_ENABLE = "cluster_adas_enable"
+
         // 领航参数 Keys
         const val KEY_APP_NAVI = "app_navi"
         const val KEY_APP_ROAD_NAVI = "app_road_navi"

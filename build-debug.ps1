@@ -16,12 +16,12 @@
 #   environment — that always round-trips through Unicode correctly.
 
 param(
-    [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
+    [string]$ProjectRoot = $(if ($PSScriptRoot) { $PSScriptRoot } else { "E:\汽车\库斯途升级破解\AmapNavi-Reborn" }),
     [string]$MirrorDir   = "$env:TEMP\amapnavi-build",
     [string]$JdkHome     = "E:\汽车\sdk_tools\jdk-17\jdk-17.0.2",
-    [string]$AndroidSdk  = "E:\汽车\sdk_tools\android-sdk",
-    [string]$GradleBin   = "E:\汽车\sdk_tools\gradle-7.5-bin\gradle-7.5\bin\gradle.bat",
-    [string]$GradleUserHome = "C:\Users\fds20\.cache\gradle"
+    [string]$AndroidSdk  = "D:\android\sdk",
+    [string]$GradleBin   = "D:\gradle\gradle-7.5\bin\gradle.bat",
+    [string]$GradleUserHome = "D:\gradle\gradle-home"
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,7 +44,12 @@ Write-Host "`n==> mirroring source -> $MirrorDir" -ForegroundColor Cyan
 if (Test-Path $MirrorDir) { Remove-Item -Recurse -Force $MirrorDir }
 New-Item -ItemType Directory -Path "$MirrorDir" | Out-Null
 
-# app/src (everything under it must be ASCII-safe, it already is)
+# app/src and app build files
+New-Item -ItemType Directory -Force -Path "$MirrorDir\app" | Out-Null
+Copy-Item "$ProjectRoot\app\build.gradle" "$MirrorDir\app\" -Force
+if (Test-Path "$ProjectRoot\app\proguard-rules.pro") {
+    Copy-Item "$ProjectRoot\app\proguard-rules.pro" "$MirrorDir\app\" -Force
+}
 robocopy "$ProjectRoot\app\src" "$MirrorDir\app\src" /E /PURGE /NFL /NDL /NJH /NJS | Out-Null
 # root build files
 robocopy $ProjectRoot $MirrorDir "build.gradle" "settings.gradle" "gradle.properties" "gradlew" "gradlew.bat" "AndroidManifest.xml" /NFL /NDL /NJH /NJS | Out-Null

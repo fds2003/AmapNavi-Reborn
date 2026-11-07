@@ -80,6 +80,18 @@
                         android:paddingEnd="8dp" />
 
                     <Button
+                        android:id="@+id/btn_open_cluster_setting"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/btn_blue"
+                        android:text="仪表投影"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12sp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp" />
+
+                    <Button
                         android:id="@+id/btn_open_setting"
                         android:layout_width="wrap_content"
                         android:layout_height="34dp"
@@ -572,5 +584,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout="@layout/activity_setting" />
+
+        <!-- 2.3 第一级仪表投影页面 ViewStub（覆盖层，避免 Activity 冷启动延迟） -->
+        <ViewStub
+            android:id="@+id/stub_cluster_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout="@layout/view_cluster_settings" />
     </FrameLayout>
 </LinearLayout>

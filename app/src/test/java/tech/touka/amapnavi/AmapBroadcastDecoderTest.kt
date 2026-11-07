@@ -114,4 +114,63 @@ class AmapBroadcastDecoderTest {
         assertEquals(1, rightmost.targetLaneIndex("LEFT"))
         assertEquals(-1, rightmost.targetLaneIndex("RIGHT"))
     }
+
+    @Test
+    fun `10001路线剩余与路名正确落库`() {
+        val state = AmapBroadcastCodec.decode(
+            driveWayRaw = "", roadLimitSpeed = 120, cameraSpeedLimit = 0,
+            cameraDistance = 0, tbtDistance = 1500, tbtTurnType = 3, roadCate = 0,
+            trafficLightSeconds = -1, trafficLightStatus = 0, nowMs = now,
+            routeRemainDistance = 12_345,
+            routeRemainTime = 678,
+            nextRoadName = "机场高速",
+            currentRoadName = "华南快速"
+        )
+        assertEquals(12_345, state.routeRemainDistance)
+        assertEquals(678, state.routeRemainTime)
+        assertEquals("机场高速", state.nextRoadName)
+        assertEquals("华南快速", state.currentRoadName)
+        assertTrue(state.navValid)
+    }
+
+    @Test
+    fun `导航结束状态落库`() {
+        val previous = NaviState(navValid = true, nextRoadName = "机场高速")
+        val state = AmapBroadcastCodec.decode(
+            driveWayRaw = "", roadLimitSpeed = 120, cameraSpeedLimit = 0,
+            cameraDistance = 0, tbtDistance = 0, tbtTurnType = 0, roadCate = 0,
+            trafficLightSeconds = -1, trafficLightStatus = 0, nowMs = now,
+            previous = previous,
+            navValid = false
+        )
+        assertFalse(state.navValid)
+        assertEquals("机场高速", state.nextRoadName)
+    }
+
+    @Test
+    fun `10001扩展字段完整落库`() {
+        val state = AmapBroadcastCodec.decode(
+            driveWayRaw = "", roadLimitSpeed = 120, cameraSpeedLimit = 80,
+            cameraDistance = 300, tbtDistance = 1500, tbtTurnType = 3, roadCate = 0,
+            trafficLightSeconds = 18, trafficLightStatus = 1, nowMs = now,
+            curSpeed = 105,
+            routeTotalDistance = 30_000,
+            segRemainTime = 30,
+            etaText = "18:45",
+            carDirection = 90,
+            trafficLightNum = 3,
+            routeRemainTrafficLightNum = 8,
+            cameraType = 1,
+            cameraId = "cam_bj_0192"
+        )
+        assertEquals(105, state.curSpeed)
+        assertEquals(30_000, state.routeTotalDistance)
+        assertEquals(30, state.segRemainTime)
+        assertEquals("18:45", state.etaText)
+        assertEquals(90, state.carDirection)
+        assertEquals(3, state.trafficLightNum)
+        assertEquals(8, state.routeRemainTrafficLightNum)
+        assertEquals(1, state.cameraType)
+        assertEquals("cam_bj_0192", state.cameraId)
+    }
 }

@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+        <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/container_tab_nav"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000000">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+<!-- 车道领航策略 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="车道级领航策略"
+            android:textColor="#00E676"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E1E1E"
+            android:orientation="vertical"
+            android:padding="10dp"
+            android:layout_marginBottom="2dp">
+
+            <CheckBox
+                android:id="@+id/cb_app_navi_highway"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="车道领航 (高速公路)"
+                android:textColor="#FFFFFF" />
+
+            <CheckBox
+                android:id="@+id/cb_app_navi_road"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="车道领航 (普通公路)"
+                android:textColor="#FFFFFF" />
+
+            <CheckBox
+                android:id="@+id/cb_suggest_lane"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="走高德推荐车道"
+                android:textColor="#FFFFFF" />
+
+            <CheckBox
+                android:id="@+id/cb_dis_lane"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="避开禁行/故障车道 (X)"
+                android:textColor="#FFFFFF" />
+
+            <CheckBox
+                android:id="@+id/cb_keep_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="提前靠左行驶偏好"
+                android:textColor="#FFFFFF" />
+
+            <CheckBox
+                android:id="@+id/cb_keep_right"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="提前靠右行驶偏好"
+                android:textColor="#FFFFFF" />
+
+            <CheckBox
+                android:id="@+id/cb_safety_legacy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="宽松变道去抖准入"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- 领航时机模式 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="领航模式"
+            android:textColor="#00E676"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E1E1E"
+            android:orientation="vertical"
+            android:padding="10dp"
+            android:layout_marginBottom="2dp">
+
+            <RadioGroup
+                android:id="@+id/rg_nav_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/rb_nav_fast"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="激进"
+                    android:textColor="#FFFFFF" />
+
+                <RadioButton
+                    android:id="@+id/rb_nav_normal"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="标准"
+                    android:textColor="#FFFFFF" />
+
+                <RadioButton
+                    android:id="@+id/rb_nav_slow"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="保守"
+                    android:textColor="#FFFFFF" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <!-- 匝道平滑减速系统 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="匝道自适应平滑减速系统"
+            android:textColor="#00E676"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E1E1E"
+            android:orientation="vertical"
+            android:padding="10dp"
+            android:layout_marginBottom="2dp">
+
+            <CheckBox
+                android:id="@+id/cb_ramp_slowdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="启用匝道提前平滑匀减速"
+                android:textColor="#FFFFFF" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="减速起点距离 (米):"
+                    android:textColor="#B0B0B0" />
+
+                <Button
+                    android:id="@+id/btn_minus_ramp_dist"
+                    android:layout_width="48dp"
+                    android:layout_height="36dp"
+                    android:background="#333333"
+                    android:text="-"
+                    android:textColor="#FFFFFF" />
+
+                <TextView
+                    android:id="@+id/tv_ramp_dist"
+                    android:layout_width="56dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="400"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/btn_plus_ramp_dist"
+                    android:layout_width="48dp"
+                    android:layout_height="36dp"
+                    android:background="#333333"
+                    android:text="+"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="匝道目标巡航速度 (km/h):"
+                    android:textColor="#B0B0B0" />
+
+                <Button
+                    android:id="@+id/btn_minus_ramp_speed"
+                    android:layout_width="48dp"
+                    android:layout_height="36dp"
+                    android:background="#333333"
+                    android:text="-"
+                    android:textColor="#FFFFFF" />
+
+                <TextView
+                    android:id="@+id/tv_ramp_speed"
+                    android:layout_width="56dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="60"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/btn_plus_ramp_speed"
+                    android:layout_width="48dp"
+                    android:layout_height="36dp"
+                    android:background="#333333"
+                    android:text="+"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 底部保存与返回 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_save_nav"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#1976D2"
+                android:text="保存配置"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btn_back_nav"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:background="#333333"
+                android:text="返回仪表"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp" />
+        </LinearLayout>
+            </LinearLayout>
+        </ScrollView>

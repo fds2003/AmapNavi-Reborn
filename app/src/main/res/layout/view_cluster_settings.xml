@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="原厂仪表投影"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="高德导航时由 Reborn 接管 HSAE 仪表；关闭后交还百度。"
+            android:textColor="#AAAAAA"
+            android:textSize="12sp" />
+
+        <CheckBox
+            android:id="@+id/switch_cluster_enable"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="启用高德仪表投影"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="通道"
+            android:textColor="#888888"
+            android:textSize="12sp" />
+
+        <CheckBox
+            android:id="@+id/cb_cluster_tbt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TBT 箭头与距离"
+            android:textColor="#FFFFFF" />
+
+        <CheckBox
+            android:id="@+id/cb_cluster_speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="限速圆牌"
+            android:textColor="#FFFFFF" />
+
+        <CheckBox
+            android:id="@+id/cb_cluster_est"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="行程剩余"
+            android:textColor="#FFFFFF" />
+
+        <CheckBox
+            android:id="@+id/cb_cluster_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="路名/红绿灯文本行"
+            android:textColor="#FFFFFF" />
+
+        <CheckBox
+            android:id="@+id/cb_cluster_tl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="文本行包含红绿灯倒计时"
+            android:textColor="#FFFFFF" />
+
+        <CheckBox
+            android:id="@+id/cb_cluster_icon_experimental"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="实验性图标（环岛/收费站/匝道，未标定）"
+            android:textColor="#FFCC80" />
+
+        <CheckBox
+            android:id="@+id/cb_cluster_adas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ADAS 电子地平线（transact 14，实验）"
+            android:textColor="#FFCC80" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="行程时间显示"
+            android:textColor="#888888"
+            android:textSize="12sp" />
+
+        <RadioGroup
+            android:id="@+id/rg_cluster_eta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_cluster_eta_arrival"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="到达时刻"
+                android:textColor="#FFFFFF" />
+
+            <RadioButton
+                android:id="@+id/rb_cluster_eta_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="剩余时长"
+                android:textColor="#FFFFFF" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/tv_cluster_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="#2A2A2A"
+            android:padding="10dp"
+            android:text="状态：未接管"
+            android:textColor="#CCCCCC"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btn_cluster_test"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="10dp"
+            android:background="#1976D2"
+            android:text="发送测试帧（直行 1.5km / 限速 80）"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btn_cluster_adas_test"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="8dp"
+            android:background="#333333"
+            android:text="发送 ADAS Position 测试帧（type 458）"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="图标标定（直接发送 displayType）"
+            android:textColor="#888888"
+            android:textSize="12sp" />
+
+        <Spinner
+            android:id="@+id/spinner_cluster_code"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:background="#2A2A2A" />
+
+        <Button
+            android:id="@+id/btn_cluster_calibrate"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="8dp"
+            android:background="#333333"
+            android:text="发送标定帧"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btn_cluster_probe"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="8dp"
+            android:background="#333333"
+            android:text="检测 HSAE 服务"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btn_cluster_back"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="8dp"
+            android:background="#333333"
+            android:text="返回仪表"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+    </LinearLayout>
+</ScrollView>

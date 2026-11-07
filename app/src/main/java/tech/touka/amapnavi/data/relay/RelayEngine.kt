@@ -20,6 +20,10 @@ import tech.touka.amapnavi.core.event.SoundEvent
 import tech.touka.amapnavi.core.model.CarState
 import tech.touka.amapnavi.core.model.NaviState
 import tech.touka.amapnavi.core.model.OvertakeSettings
+import tech.touka.amapnavi.cluster.ClusterRuntime
+import tech.touka.amapnavi.cluster.ClusterStatus
+import tech.touka.amapnavi.cluster.HsaeClusterTransport
+import tech.touka.amapnavi.cluster.RepoClusterSettings
 import tech.touka.amapnavi.data.amap.AmapBroadcastDecoder
 import tech.touka.amapnavi.data.amap.AmapContract
 import tech.touka.amapnavi.data.prefs.UserSettingsRepository
@@ -68,6 +72,13 @@ class RelayEngine private constructor(context: Context) {
     private val soundEngine = SoundFeedbackEngine(appContext)
     private val decoder = AmapBroadcastDecoder()
     private val rampSpeedPlanner = RampSpeedPlanner()
+
+    private val clusterRuntime = ClusterRuntime(
+        transport = HsaeClusterTransport(),
+        settings = RepoClusterSettings(settingsRepository)
+    )
+
+    val clusterStatusFlow: StateFlow<ClusterStatus> = clusterRuntime.status()
 
     private val _carStateFlow = MutableStateFlow(CarState())
     val carStateFlow: StateFlow<CarState> = _carStateFlow
@@ -141,6 +152,7 @@ class RelayEngine private constructor(context: Context) {
         deviceDiscovery.start()
         startTrafficLightMonitor()
         startTelemetryWatchdog()
+        clusterRuntime.start(scope, decoder.naviStateFlow)
         _overtakeStatusFlow.value = stateMachine.status()
     }
 
@@ -154,6 +166,7 @@ class RelayEngine private constructor(context: Context) {
             // 未注册时忽略
         }
         decoder.reset()
+        clusterRuntime.stop()
         udpClient.stop()
         deviceDiscovery.stop()
         trafficLightMonitorJob?.cancel()
@@ -209,6 +222,24 @@ class RelayEngine private constructor(context: Context) {
         stateMachine.abort()
         _overtakeStatusFlow.value = stateMachine.status()
     }
+
+    /** 仪表测试帧：直行 1.5km + 限速 80，用于现场标定。 */
+    fun sendClusterTestFrame() {
+        clusterRuntime.sendTestFrame()
+    }
+
+    /** 回放一帧 ADAS Position（transact 14 / type 458）。 */
+    fun sendClusterAdasTestFrame(): Boolean = clusterRuntime.sendAdasTestFrame()
+
+    /** 回放一帧 ADAS Meta（transact 14 / type 459）前导帧。 */
+    fun sendClusterAdasMetaTestFrame(): Boolean = clusterRuntime.sendAdasMetaTestFrame()
+
+    /** 标定用：直接发送指定 displayType 的 TBT 帧。 */
+    fun sendClusterCalibrationFrame(displayType: Int): Boolean =
+        clusterRuntime.sendCalibrationFrame(displayType)
+
+    /** 检测 HSAE 仪表服务可达性与读权限。 */
+    fun probeCluster(): tech.touka.amapnavi.cluster.ProbeResult = clusterRuntime.probe()
 
     private fun startTrafficLightMonitor() {
         if (trafficLightMonitorJob?.isActive == true) return

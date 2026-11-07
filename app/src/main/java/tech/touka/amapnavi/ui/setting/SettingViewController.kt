@@ -52,15 +52,28 @@ class SettingViewController(
         btnTabNav.isSelected = (tabIndex == 1)
         btnTabOvertake.isSelected = (tabIndex == 2)
 
+        // 先初始化目标 Tab（必要时 inflate ViewStub），再切换显示，避免白屏一帧
+        when (tabIndex) {
+            0 -> if (!generalInitialized) { generalInitialized = true; initGeneralTab() }
+            1 -> if (!navInitialized) { navInitialized = true; inflateStub(R.id.stub_tab_nav); initNavTab() }
+            2 -> if (!overtakeInitialized) { overtakeInitialized = true; inflateStub(R.id.stub_tab_overtake); initOvertakeTab() }
+        }
+
         if (flipper.displayedChild != tabIndex) {
             flipper.displayedChild = tabIndex
         }
+    }
 
-        when (tabIndex) {
-            0 -> if (!generalInitialized) { generalInitialized = true; initGeneralTab() }
-            1 -> if (!navInitialized) { navInitialized = true; initNavTab() }
-            2 -> if (!overtakeInitialized) { overtakeInitialized = true; initOvertakeTab() }
+    /** 预加载通用参数控件，但不切换当前 Tab。 */
+    fun preloadGeneralTab() {
+        if (!generalInitialized) {
+            generalInitialized = true
+            initGeneralTab()
         }
+    }
+
+    private fun inflateStub(id: Int) {
+        rootView.findViewById<android.view.ViewStub>(id)?.inflate()
     }
 
     private fun initGeneralTab() {

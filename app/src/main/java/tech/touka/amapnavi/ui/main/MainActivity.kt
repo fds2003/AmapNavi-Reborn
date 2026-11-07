@@ -66,6 +66,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnOvertake: Button
     private var layoutSettingsOverlay: View? = null
     private var settingController: tech.touka.amapnavi.ui.setting.SettingViewController? = null
+    private var layoutClusterOverlay: View? = null
+    private var clusterController: tech.touka.amapnavi.ui.setting.ClusterSettingsTabController? = null
+    private var settingsOverlayRequested = false
+    private var clusterOverlayRequested = false
     private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val traceLines = ArrayList<String>()
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.US)
@@ -92,6 +96,9 @@ class MainActivity : AppCompatActivity() {
         startKeepAliveService()
         engine.start()
 
+        // 首帧后再预加载设置/仪表覆盖层，避免拖慢启动，同时消除首次点击卡顿
+        window.decorView.post { preloadOverlays() }
+
         val showTab = intent.getIntExtra("show_tab", -1)
         if (showTab != -1) openSettingTab(showTab)
     }
@@ -102,6 +109,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        clusterController?.dispose()
+        clusterController = null
         uiScope.cancel()
         super.onDestroy()
     }
@@ -143,6 +152,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btn_open_setting)?.setOnClickListener { openSettingTab(0) }
         findViewById<Button>(R.id.btn_open_nav_setting)?.setOnClickListener { openSettingTab(1) }
         findViewById<Button>(R.id.btn_open_overtake_setting)?.setOnClickListener { openSettingTab(2) }
+        findViewById<Button>(R.id.btn_open_cluster_setting)?.setOnClickListener {
+            openClusterOverlay()
+        }
         findViewById<Button>(R.id.btn_open_devices)?.setOnClickListener {
             startActivity(Intent(this, UdpDeviceActivity::class.java))
             overridePendingTransition(0, 0)
@@ -178,15 +190,58 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    /**
+     * 首帧后预加载覆盖层：布局 inflate + 通用参数控件绑定只做一次，
+     * 首次点击“通用设置”/“仪表投影”只切 visibility。
+     */
+    private fun preloadOverlays() {
+        if (ensureSettingsInitialized()) {
+            settingController?.preloadGeneralTab()
+            if (!settingsOverlayRequested) {
+                layoutSettingsOverlay?.visibility = View.GONE
+            }
+        }
+        if (ensureClusterInitialized()) {
+            if (!clusterOverlayRequested) {
+                layoutClusterOverlay?.visibility = View.GONE
+            }
+        }
+    }
+
     private fun openSettingTab(tabIndex: Int) {
+        settingsOverlayRequested = true
         if (ensureSettingsInitialized()) {
             layoutSettingsOverlay?.visibility = View.VISIBLE
             settingController?.showTab(tabIndex)
         }
     }
 
+    private fun ensureClusterInitialized(): Boolean {
+        if (layoutClusterOverlay == null) {
+            val stub = findViewById<android.view.ViewStub>(R.id.stub_cluster_overlay) ?: return false
+            val inflated = stub.inflate()
+            layoutClusterOverlay = inflated
+            clusterController = tech.touka.amapnavi.ui.setting.ClusterSettingsTabController(
+                activity = this,
+                root = inflated,
+                repo = tech.touka.amapnavi.data.prefs.UserSettingsRepository.getInstance(this),
+                onClose = { inflated.visibility = View.GONE }
+            )
+        }
+        return true
+    }
+
+    private fun openClusterOverlay() {
+        clusterOverlayRequested = true
+        if (ensureClusterInitialized()) {
+            layoutClusterOverlay?.visibility = View.VISIBLE
+        }
+    }
+
     override fun onBackPressed() {
-        if (layoutSettingsOverlay?.visibility == View.VISIBLE) {
+        if (layoutClusterOverlay?.visibility == View.VISIBLE) {
+            layoutClusterOverlay?.visibility = View.GONE
+        } else if (layoutSettingsOverlay?.visibility == View.VISIBLE) {
             layoutSettingsOverlay?.visibility = View.GONE
         } else {
             super.onBackPressed()
