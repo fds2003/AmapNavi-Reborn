@@ -140,6 +140,10 @@ class RelayEngine private constructor(context: Context) {
     private var trafficLightMonitorJob: Job? = null
     private var lastTrafficLightStatus = 0
 
+    /** 侧后盲区/侧向来车提醒（方案 A）：carStateFlow 上监测，上升沿发声。 */
+    private var sideReminderJob: Job? = null
+    private var sideReminderActive = false
+
     /** 遥测心跳：tick 只在收包时运行，断流必须由独立线程发现 */
     private val telemetryWatchdog = TelemetryWatchdog(TELEMETRY_TIMEOUT_MS)
     private var telemetryWatchdogJob: Job? = null
@@ -159,6 +163,7 @@ class RelayEngine private constructor(context: Context) {
         udpClient.start()
         deviceDiscovery.start()
         startTrafficLightMonitor()
+        startSideReminderMonitor()
         startTelemetryWatchdog()
         clusterRuntime.start(scope, decoder.naviStateFlow)
         _overtakeStatusFlow.value = stateMachine.status()
@@ -180,6 +185,9 @@ class RelayEngine private constructor(context: Context) {
         trafficLightMonitorJob?.cancel()
         trafficLightMonitorJob = null
         lastTrafficLightStatus = 0
+        sideReminderJob?.cancel()
+        sideReminderJob = null
+        sideReminderActive = false
         telemetryWatchdogJob?.cancel()
         telemetryWatchdogJob = null
         telemetryWatchdog.reset()
@@ -261,6 +269,25 @@ class RelayEngine private constructor(context: Context) {
                     soundEngine.play(SoundEvent.TRAFFIC_SIGN_GREEN)
                 }
                 lastTrafficLightStatus = navi.trafficLightStatus
+            }
+        }
+    }
+
+    /**
+     * 方案 A：侧后盲区/侧向来车提醒。监测 carStateFlow，左侧或右侧盲区
+     * （毫米波 BSD 或激光侧后）由「无车 → 有车」上升沿时发声（CAR_WATCHOUT），
+     * 持续报警不重复刷音。
+     */
+    private fun startSideReminderMonitor() {
+        if (sideReminderJob?.isActive == true) return
+        sideReminderJob = scope.launch {
+            _carStateFlow.collect { car ->
+                val active = car.leftBlindspot || car.rightBlindspot ||
+                    car.lidarLeftRearBlind || car.lidarRightRearBlind
+                if (active && !sideReminderActive) {
+                    soundEngine.play(SoundEvent.CAR_WATCHOUT)
+                }
+                sideReminderActive = active
             }
         }
     }

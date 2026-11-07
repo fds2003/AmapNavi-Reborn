@@ -284,6 +284,40 @@
                                 android:layout_marginTop="4dp"
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal" />
+
+                            <!-- 侧后盲区/侧向来车提醒（库斯途顶配电子后视镜式） -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tv_side_left"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginEnd="4dp"
+                                    android:background="@drawable/shape_button"
+                                    android:gravity="center"
+                                    android:padding="6dp"
+                                    android:text="左侧盲区"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp" />
+
+                                <TextView
+                                    android:id="@+id/tv_side_right"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="4dp"
+                                    android:background="@drawable/shape_button"
+                                    android:gravity="center"
+                                    android:padding="6dp"
+                                    android:text="右侧盲区"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
                         </LinearLayout>
                     </ScrollView>
 

@@ -57,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvBsdLeft: TextView
     private lateinit var tvLead: TextView
     private lateinit var tvBsdRight: TextView
+    private lateinit var tvSideLeft: TextView
+    private lateinit var tvSideRight: TextView
     private lateinit var tvLidarLeft: TextView
     private lateinit var tvEgo: TextView
     private lateinit var tvLidarRight: TextView
@@ -128,6 +130,8 @@ class MainActivity : AppCompatActivity() {
         tvBsdLeft = findViewById(R.id.tv_bsd_left)
         tvLead = findViewById(R.id.tv_lead)
         tvBsdRight = findViewById(R.id.tv_bsd_right)
+        tvSideLeft = findViewById(R.id.tv_side_left)
+        tvSideRight = findViewById(R.id.tv_side_right)
         tvLidarLeft = findViewById(R.id.tv_lidar_left)
         tvEgo = findViewById(R.id.tv_ego)
         tvLidarRight = findViewById(R.id.tv_lidar_right)
@@ -297,6 +301,8 @@ class MainActivity : AppCompatActivity() {
         tvBsdRight.setTextColor(
             color(if (car.rightBlindspot) R.color.danger_red else R.color.success_green)
         )
+
+        renderSideReminder(car)
 
         tvLead.text = if (car.lead1) {
             String.format(Locale.US, "%.1fm\n%dkm/h", car.drel, car.vLead)
@@ -486,6 +492,20 @@ class MainActivity : AppCompatActivity() {
                 if (tvDeviceStatus.text == "C3 断联！请接管") tvDeviceStatus.text = "C3 "
             }
         }
+    }
+
+    /**
+     * 侧后盲区/侧向来车提醒（库斯途顶配电子后视镜式，方案 A）。
+     * 左侧 = 毫米波 BSD 盲区 OR 激光左后盲区；右侧同理。报警时红字高亮，
+     * 无车时灰字「无来车」。声音由 RelayEngine 在状态上升沿触发（不在此处）。
+     */
+    private fun renderSideReminder(car: CarState) {
+        val leftActive = car.leftBlindspot || car.lidarLeftRearBlind
+        val rightActive = car.rightBlindspot || car.lidarRightRearBlind
+        tvSideLeft.text = if (leftActive) "左侧来车！" else "左侧 无来车"
+        tvSideLeft.setTextColor(color(if (leftActive) R.color.danger_red else R.color.text_muted))
+        tvSideRight.text = if (rightActive) "右侧来车！" else "右侧 无来车"
+        tvSideRight.setTextColor(color(if (rightActive) R.color.danger_red else R.color.text_muted))
     }
 
     private fun appendTrace(text: String) {
