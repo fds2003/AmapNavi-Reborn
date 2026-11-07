@@ -140,6 +140,34 @@ class OvertakeStateMachineTest {
         assertEquals(BlockCause.TELEMETRY_LOST, lost.blockCause)
     }
 
+    // ---- UX-1：冷却倒计时显示用向上取整（旧写法 remainMs/1000+1 在恰整秒时多显 1 秒）----
+    @Test
+    fun `冷却倒计时恰整秒时不多显1秒`() {
+        // 旧写法 remainMs=2000 → 2000/1000+1 = 3 秒（错）；正确 ceil(2.0s) = 2 秒
+        // 用 2s 短冷却构造「恰剩 2000ms」的帧来区分。
+        val short = OvertakeSettings(interruptCooldownMs = 3000L)
+        val m2 = OvertakeStateMachine(
+            safetyEvaluator = LateralSafetyEvaluator(),
+            laneOracle = RouteLaneMarkingOracle(),
+            leadEvaluator = LeadVehicleEvaluator(),
+            onControlCommand = { _, _ -> }, onCancelCommand = { _ -> },
+            onSound = { _ -> }, clock = { now },
+        )
+        fun t2(c: CarState, s: OvertakeSettings) = m2.tick(c, navi, s)
+        t2(car(), short)            // IDLE -> EVALUATING
+        t2(car(), short)           // -> SIDE_CHECKING
+        t2(car(), short)           // -> PREPARE
+        now += 1300L
+        t2(car(), short)           // -> EXECUTING
+        val cdStart = now
+        t2(car(steerAngle = 40f), short)   // -> COOLDOWN，冷却至 cdStart+3000
+        now = cdStart + 1000L              // 剩余恰 2000ms
+        val st = t2(car(steerAngle = 40f), short)
+        // 进入 COOLDOWN 后该帧走「反向变道冷却中，剩余 X 秒」分支，
+        // remainMs 恰 2000ms 应向上取整显示 2 秒（旧 bug 写法会显示 3 秒）
+        assertEquals("反向变道冷却中，剩余 2 秒", st.message)
+    }
+
     @Test
     fun `执行中遥测中断由心跳撤单`() {
         assertEquals(OvertakeState.EVALUATING, tick(car()).state)

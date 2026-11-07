@@ -66,7 +66,7 @@ class OvertakeStateMachine(
         if (now < cooldownUntilMs) {
             state = OvertakeState.COOLDOWN
             val remainMs = cooldownUntilMs - now
-            message = "反向变道冷却中，剩余 ${(remainMs / 1000L) + 1L} 秒"
+            message = "反向变道冷却中，剩余 ${ceilingSeconds(remainMs)} 秒"
             return snapshot(now)
         }
         if (state == OvertakeState.COOLDOWN && cooldownUntilMs > 0L) {
@@ -312,6 +312,12 @@ class OvertakeStateMachine(
 
     private fun formatDeg(value: Float): String {
         return String.format(java.util.Locale.US, "%.1f", value)
+    }
+
+    /** UX-1：剩余毫秒 → 秒（向上取整）。remainMs=2000 显示 2 秒，而非旧版 3 秒。 */
+    private fun ceilingSeconds(remainMs: Long): Long {
+        if (remainMs <= 0L) return 0L
+        return (remainMs + 999L) / 1000L
     }
 
     /** 纯复位：不发送撤销指令。 */
