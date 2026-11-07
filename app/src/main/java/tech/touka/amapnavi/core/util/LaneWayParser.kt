@@ -27,10 +27,14 @@ data class ParsedLaneWay(
     /**
      * 假定自车沿高德推荐车道行驶，推算相邻目标车道索引。
      * 无推荐车道或无导航数据时返回 -1（故障安全：视为无车道）。
+     *
+     * R-8：多推荐车道（suggest 含多个索引）时，取中间推荐车道（索引 size/2）
+     * 作为自车估计位置，避免始终取 suggest[0] 导致超车方向判断整体偏移一格；
+     * 单推荐时中位数即唯一值，与旧行为一致。
      */
     fun targetLaneIndex(direction: String): Int {
         if (suggest.isEmpty() || laneCount == 0) return -1
-        val current = suggest[0]
+        val current = suggest[suggest.size / 2]
         val target = when (direction) {
             "LEFT" -> current - 1
             "RIGHT" -> current + 1

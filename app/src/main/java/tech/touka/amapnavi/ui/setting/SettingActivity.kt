@@ -116,8 +116,8 @@ class SettingActivity : AppCompatActivity() {
         cbVideoShow?.isChecked = repo.getBoolean(UserSettingsRepository.KEY_VIDEO_SHOW, false)
         cbLaneShow?.isChecked = repo.getBoolean(UserSettingsRepository.KEY_LANE_SHOW, true)
         cbLaneTypePublish?.isChecked = repo.getBoolean(UserSettingsRepository.KEY_LANE_TYPE_PUBLISH, true)
-        cbVideoShowFast?.isChecked = repo.getBoolean("video_show_fast", false)
-        cbLaneColor?.isChecked = repo.getBoolean("lane_color", true)
+        cbVideoShowFast?.isChecked = repo.getBoolean(UserSettingsRepository.KEY_VIDEO_SHOW_FAST, false)
+        cbLaneColor?.isChecked = repo.getBoolean(UserSettingsRepository.KEY_LANE_COLOR, true)
         cbAppLog?.isChecked = repo.getBoolean(UserSettingsRepository.KEY_APP_LOG, true)
         cbAppSpeak?.isChecked = repo.getBoolean(UserSettingsRepository.KEY_APP_SPEAK, true)
         cbTunnelDec?.isChecked = repo.getBoolean(UserSettingsRepository.KEY_TUNNEL_DEC_SPEED, false)
@@ -152,8 +152,8 @@ class SettingActivity : AppCompatActivity() {
         val etRedLightMin = bindStepField(R.id.btnMinusRedLightMinSpeedLimt, R.id.btnPlusRedLightMinSpeedLimt, R.id.etRedLightMinSpeedLimt, UserSettingsRepository.KEY_RED_LIGHT_MIN_SPEED_LIMIT, 20, 5, 0, 80)
         val etNaviHoldTime = bindStepField(R.id.btnMinusNaviTrafficAssistTime, R.id.btnPlusNaviTrafficAssistTime, R.id.etNaviTrafficAssistTime, UserSettingsRepository.KEY_ASSIST_HOLD_TIME, 0, 1, 0, 30)
         val etLaneInterval = bindStepField(R.id.btnMinusLaneDetectInterval, R.id.btnPlusLaneDetectInterval, R.id.etLaneDetectInterval, UserSettingsRepository.KEY_LANE_DETECT_INTERVAL, 500, 50, 50, 1000)
-        val etLastLaneSuppress = bindStepField(R.id.btnMinusLastLaneSuppress, R.id.btnPlusLastLaneSuppress, R.id.etLastLaneSuppress, "last_lane_suppress_s", 5, 1, 1, 20)
-        val etNewLaneAppear = bindStepField(R.id.btnMinusNewLaneAppear, R.id.btnPlusNewLaneAppear, R.id.etNewLaneAppear, "new_lane_appear_s", 0, 1, 0, 10)
+        val etLastLaneSuppress = bindStepField(R.id.btnMinusLastLaneSuppress, R.id.btnPlusLastLaneSuppress, R.id.etLastLaneSuppress, UserSettingsRepository.KEY_LAST_LANE_SUPPRESS_S, 5, 1, 1, 20)
+        val etNewLaneAppear = bindStepField(R.id.btnMinusNewLaneAppear, R.id.btnPlusNewLaneAppear, R.id.etNewLaneAppear, UserSettingsRepository.KEY_NEW_LANE_APPEAR_S, 0, 1, 0, 10)
         val etStationSpeed = bindStepField(R.id.btnMinusStationSpeed, R.id.btnPlusStationSpeed, R.id.etStationSpeed, UserSettingsRepository.KEY_STATION_SPEED, 0, 5, 0, 60)
         val etStationDist = bindStepField(R.id.btnMinusStationDistOffset, R.id.btnPlusStationDistOffset, R.id.etStationDistOffset, UserSettingsRepository.KEY_STATION_DIST_OFFSET, 0, 50, 0, 500)
         val etStationKeepTime = bindStepField(R.id.btnMinusStationKeepTime, R.id.btnPlusStationKeepTime, R.id.etStationKeepTime, UserSettingsRepository.KEY_STATION_KEEP_TIME, 0, 1, 0, 30)
@@ -175,8 +175,8 @@ class SettingActivity : AppCompatActivity() {
             cbVideoShow?.let { repo.setBoolean(UserSettingsRepository.KEY_VIDEO_SHOW, it.isChecked) }
             cbLaneShow?.let { repo.setBoolean(UserSettingsRepository.KEY_LANE_SHOW, it.isChecked) }
             cbLaneTypePublish?.let { repo.setBoolean(UserSettingsRepository.KEY_LANE_TYPE_PUBLISH, it.isChecked) }
-            cbVideoShowFast?.let { repo.setBoolean("video_show_fast", it.isChecked) }
-            cbLaneColor?.let { repo.setBoolean("lane_color", it.isChecked) }
+            cbVideoShowFast?.let { repo.setBoolean(UserSettingsRepository.KEY_VIDEO_SHOW_FAST, it.isChecked) }
+            cbLaneColor?.let { repo.setBoolean(UserSettingsRepository.KEY_LANE_COLOR, it.isChecked) }
             cbAppLog?.let { repo.setBoolean(UserSettingsRepository.KEY_APP_LOG, it.isChecked) }
             cbAppSpeak?.let { repo.setBoolean(UserSettingsRepository.KEY_APP_SPEAK, it.isChecked) }
             cbTunnelDec?.let { repo.setBoolean(UserSettingsRepository.KEY_TUNNEL_DEC_SPEED, it.isChecked) }
@@ -191,22 +191,22 @@ class SettingActivity : AppCompatActivity() {
             repo.setInt(UserSettingsRepository.KEY_VISION_LANE_MODE, vMode)
 
             // 保存步进输入框
-            saveIntFromEditText(etCpMin, UserSettingsRepository.KEY_CP_MIN_SPEED_LIMIT, 10)
-            saveIntFromEditText(etRedLightMin, UserSettingsRepository.KEY_RED_LIGHT_MIN_SPEED_LIMIT, 20)
-            saveIntFromEditText(etNaviHoldTime, UserSettingsRepository.KEY_ASSIST_HOLD_TIME, 0)
-            saveIntFromEditText(etLaneInterval, UserSettingsRepository.KEY_LANE_DETECT_INTERVAL, 500)
-            saveIntFromEditText(etLastLaneSuppress, "last_lane_suppress_s", 5)
-            saveIntFromEditText(etNewLaneAppear, "new_lane_appear_s", 0)
-            saveIntFromEditText(etStationSpeed, UserSettingsRepository.KEY_STATION_SPEED, 0)
-            saveIntFromEditText(etStationDist, UserSettingsRepository.KEY_STATION_DIST_OFFSET, 0)
-            saveIntFromEditText(etStationKeepTime, UserSettingsRepository.KEY_STATION_KEEP_TIME, 0)
-            saveIntFromEditText(etMinSpeed, UserSettingsRepository.KEY_MIN_SPEED_LIMIT, 0)
-            saveIntFromEditText(etMaxSpeed, UserSettingsRepository.KEY_MAX_SPEED_LIMIT, 130)
-            saveIntFromEditText(etRoadPercent, UserSettingsRepository.KEY_ROAD_SPEED_LIMIT_PERCENT, 0)
-            saveIntFromEditText(etRoadKph, UserSettingsRepository.KEY_ROAD_SPEED_LIMIT_KPH, 0)
-            saveIntFromEditText(etHighwayOffset, UserSettingsRepository.KEY_OFFSET_HIGHWAY, 0)
-            saveIntFromEditText(etRoadOffset, UserSettingsRepository.KEY_OFFSET_ROAD, 0)
-            saveIntFromEditText(etTopPad, UserSettingsRepository.KEY_TOP_PAD_DP, 0)
+            saveIntFromEditText(etCpMin, UserSettingsRepository.KEY_CP_MIN_SPEED_LIMIT, 10, 0, 60)
+            saveIntFromEditText(etRedLightMin, UserSettingsRepository.KEY_RED_LIGHT_MIN_SPEED_LIMIT, 20, 0, 80)
+            saveIntFromEditText(etNaviHoldTime, UserSettingsRepository.KEY_ASSIST_HOLD_TIME, 0, 0, 30)
+            saveIntFromEditText(etLaneInterval, UserSettingsRepository.KEY_LANE_DETECT_INTERVAL, 500, 50, 1000)
+            saveIntFromEditText(etLastLaneSuppress, UserSettingsRepository.KEY_LAST_LANE_SUPPRESS_S, 5, 1, 20)
+            saveIntFromEditText(etNewLaneAppear, UserSettingsRepository.KEY_NEW_LANE_APPEAR_S, 0, 0, 10)
+            saveIntFromEditText(etStationSpeed, UserSettingsRepository.KEY_STATION_SPEED, 0, 0, 60)
+            saveIntFromEditText(etStationDist, UserSettingsRepository.KEY_STATION_DIST_OFFSET, 0, 0, 500)
+            saveIntFromEditText(etStationKeepTime, UserSettingsRepository.KEY_STATION_KEEP_TIME, 0, 0, 30)
+            saveIntFromEditText(etMinSpeed, UserSettingsRepository.KEY_MIN_SPEED_LIMIT, 0, 0, 80)
+            saveIntFromEditText(etMaxSpeed, UserSettingsRepository.KEY_MAX_SPEED_LIMIT, 130, 60, 150)
+            saveIntFromEditText(etRoadPercent, UserSettingsRepository.KEY_ROAD_SPEED_LIMIT_PERCENT, 0, 0, 30)
+            saveIntFromEditText(etRoadKph, UserSettingsRepository.KEY_ROAD_SPEED_LIMIT_KPH, 0, 0, 30)
+            saveIntFromEditText(etHighwayOffset, UserSettingsRepository.KEY_OFFSET_HIGHWAY, 0, 0, 30)
+            saveIntFromEditText(etRoadOffset, UserSettingsRepository.KEY_OFFSET_ROAD, 0, 0, 30)
+            saveIntFromEditText(etTopPad, UserSettingsRepository.KEY_TOP_PAD_DP, 0, 0, 200)
 
             Toast.makeText(this, "通用参数已成功保存并即时生效！", Toast.LENGTH_SHORT).show()
         }
@@ -262,9 +262,10 @@ class SettingActivity : AppCompatActivity() {
         return et
     }
 
-    private fun saveIntFromEditText(et: EditText?, key: String, defVal: Int) {
+    private fun saveIntFromEditText(et: EditText?, key: String, defVal: Int, min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE) {
         if (et == null) return
-        val v = et.text.toString().toIntOrNull() ?: defVal
+        // R-5：键盘直输与步进按钮同范围夹取，防止异常值持久化影响行车安全（限速计算）
+        val v = (et.text.toString().toIntOrNull() ?: defVal).coerceIn(min, max)
         repo.setInt(key, v)
     }
 

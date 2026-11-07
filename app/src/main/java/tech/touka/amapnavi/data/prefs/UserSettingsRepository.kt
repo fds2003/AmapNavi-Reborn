@@ -52,6 +52,10 @@ class UserSettingsRepository(context: Context) {
         const val KEY_OFFSET_HIGHWAY = "offset_highway"
         const val KEY_OFFSET_ROAD = "offset_road"
         const val KEY_TOP_PAD_DP = "top_pad_dp"
+        const val KEY_VIDEO_SHOW_FAST = "video_show_fast"       // R-4：设置页裸字符串 KEY 收编
+        const val KEY_LANE_COLOR = "lane_color"
+        const val KEY_LAST_LANE_SUPPRESS_S = "last_lane_suppress_s"
+        const val KEY_NEW_LANE_APPEAR_S = "new_lane_appear_s"
 
         // 原厂仪表 Keys
         const val KEY_CLUSTER_ENABLE = "cluster_enable"
@@ -155,6 +159,11 @@ class UserSettingsRepository(context: Context) {
     fun getFloat(key: String, def: Float): Float = prefs.getFloat(key, def)
     fun setFloat(key: String, value: Float) {
         prefs.edit().putFloat(key, value).apply()
+        // R-6：雷达/超车阈值类参数写入后立即刷新内存缓存，避免保存后需重启 App 才生效
+        if (key == KEY_REAR_THRESH_VAL || key == KEY_REAR_VREL_TIME ||
+            key == KEY_FRONT_THRESH_VAL || key == KEY_FRONT_VREL_TIME) {
+            cachedOvertakeSettings = loadOvertakeSettings()
+        }
     }
 
     fun setOvertakeEnabled(enabled: Boolean) = setBoolean(KEY_OVERTAKE_ENABLED, enabled)

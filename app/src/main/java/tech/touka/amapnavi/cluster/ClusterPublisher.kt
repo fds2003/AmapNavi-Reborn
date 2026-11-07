@@ -28,11 +28,11 @@ class ClusterPublisher(
     private val _status = MutableStateFlow(ClusterStatus())
     val status: StateFlow<ClusterStatus> = _status
 
-    @Volatile
-    private var latestNavi = NaviState()
+    /** R-2：navi 与到达时间合并为单一不可变快照，单次引用赋值原子，消除跨线程组合读撕裂。 */
+    private data class NavSnapshot(val navi: NaviState, val receivedAt: Long)
 
     @Volatile
-    private var lastNavAt = 0L
+    private var navSnapshot = NavSnapshot(NaviState(), 0L)
 
     private var state = ClusterState.RELEASED
 
@@ -48,8 +48,7 @@ class ClusterPublisher(
     private var lastSentSpeed = 0
 
     fun onNaviState(navi: NaviState, nowMs: Long = clock()) {
-        latestNavi = navi
-        lastNavAt = nowMs
+        navSnapshot = NavSnapshot(navi, nowMs)   // 单次引用赋值是原子的
     }
 
     fun tick(now: Long = clock()) {
@@ -58,8 +57,8 @@ class ClusterPublisher(
             return
         }
 
-        val navi = latestNavi
-        if (!navi.navValid || now - lastNavAt > TIMEOUT_MS) {
+        val snap = navSnapshot   // 读一次快照，后续全用 snap（navi 与 receivedAt 组合一致）
+        if (!snap.navi.navValid || now - snap.receivedAt > TIMEOUT_MS) {
             if (state != ClusterState.RELEASED) release(now)
             return
         }
@@ -68,7 +67,7 @@ class ClusterPublisher(
 
         val frame = try {
             ClusterMapper.toFrame(
-                navi, now, settings.etaMode, settings.tlEnabled, settings.experimentalIcons
+                snap.navi, now, settings.etaMode, settings.tlEnabled, settings.experimentalIcons
             )
         } catch (t: Throwable) {
             fail("map failed: ${t.message}")

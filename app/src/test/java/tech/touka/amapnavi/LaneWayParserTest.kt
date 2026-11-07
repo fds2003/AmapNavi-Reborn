@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import tech.touka.amapnavi.core.util.LaneWayParser
+import tech.touka.amapnavi.core.util.ParsedLaneWay
 
 /**
  * EXTRA_DRIVE_WAY 车道串解析契约测试（纯 JVM）。
@@ -52,6 +53,20 @@ class LaneWayParserTest {
         assertEquals(2, three.targetLaneIndex("RIGHT"))
         // 最右车道再向右越界，故障安全返回 -1
         assertEquals(-1, LaneWayParser.parse("s|S").targetLaneIndex("RIGHT"))
+    }
+
+    @Test
+    fun `多推荐车道取中间车道为自车估计位置（R-8）`() {
+        // R-8：suggest = [1, 2]（车道 2/3 同时推荐）时，
+        // 自车最近推荐车道取中位数（索引 size/2 = 1），而非 suggest[0]。
+        val multi = ParsedLaneWay(tokens = listOf("s", "S", "S", "s"), suggest = listOf(1, 2))
+        // 中位数 suggest[size/2=1]=2：向左 target=1，向右 target=3（均在 0..3 内）
+        assertEquals("向左超车目标应为索引 1（车道 2）", 1, multi.targetLaneIndex("LEFT"))
+        assertEquals("向右超车目标应为索引 3（车道 4）", 3, multi.targetLaneIndex("RIGHT"))
+        // 单推荐时与旧行为一致（中位数 == 唯一值）
+        val single = ParsedLaneWay(tokens = listOf("s", "S", "s"), suggest = listOf(1))
+        assertEquals(0, single.targetLaneIndex("LEFT"))
+        assertEquals(2, single.targetLaneIndex("RIGHT"))
     }
 
     @Test

@@ -221,6 +221,39 @@ class ClusterPublisherTest {
     }
 
     @Test
+    fun `R-2 快照读：tick 内 navi 与到达时间来自同一原子快照`() {
+        // R-2：latestNavi 与 lastNavAt 是两个 @Volatile 字段，
+        // 组合读取可能读到「新 navi + 旧时间戳」的撕裂帧，误判 3 秒超时提前 release。
+        // 契约：onNaviState 与 tick 之间不插入任何 release 条件变化——
+        // 写入 (navi, now) 后立即 tick(now) 必须走 ACTIVE 分支，
+        // 不得因"lastNavAt 尚未同步"而误超时。
+        val t = FakeTransport()
+        val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
+
+        // 初始 lastNavAt=0：若 tick 读到撕裂的旧时间戳（0），
+        // 4_000 - 0 > 3_000 会误判超时；正确实现读快照后 4_000 - 4_000 = 0。
+        p.onNaviState(navi(), 4_000L)
+        p.tick(4_000L)
+
+        assertEquals(ClusterState.ACTIVE, p.status.value.state)
+        assertTrue(t.calls.any { it.startsWith("tbt:") })
+    }
+
+    @Test
+    fun `R-2 快照读：过期帧仍按快照内时间戳判超时`() {
+        // 负向对照：快照内 receivedAt 真实过期（1_000 vs now 4_001 > 3_000），
+        // tick 仍必须 release，防止快照化削弱超时保护。
+        val t = FakeTransport()
+        val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
+        p.onNaviState(navi(), 1_000L)
+        p.tick(1_000L)
+        t.calls.clear()
+
+        p.tick(4_001L)  // 快照 receivedAt=1_000，4_001-1_000=3_001 > 3_000
+        assertEquals(ClusterState.RELEASED, p.status.value.state)
+    }
+
+    @Test
     fun `分通道关闭时不调用对应Transport`() {
         val t = FakeTransport()
         val p = ClusterPublisher(

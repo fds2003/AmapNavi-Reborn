@@ -33,8 +33,9 @@ class KeepAliveService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // R-7：RelayEngine 已在 onCreate 启动（含幂等保护），此处不再重复 start()，
+        // 避免 Android 4.4 重复注册 BroadcastReceiver 抛 IllegalArgumentException 被 catch 掩盖
         startForeground(NOTIFICATION_ID, buildNotification())
-        RelayEngine.get(this).start()
         return START_STICKY
     }
 
