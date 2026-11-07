@@ -282,7 +282,7 @@ class MainActivity : AppCompatActivity() {
 
         tvSpeed.text = car.vEgo.toString()
         tvCruise.text = "巡航 ${car.vCruise} km/h"
-        tvCruiseAdjust.text = "定速微调 ±5（当前 ${car.vCruise}）"
+        tvCruiseAdjust.text = "定速微调 ${car.vCruise}"
 
         tvBsdLeft.text = if (car.leftBlindspot) "有车报警" else "正常"
         tvBsdLeft.setTextColor(

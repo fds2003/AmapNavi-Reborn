@@ -290,8 +290,10 @@
                     <!-- 定速巡航快捷微调 -->
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="36dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="36dp"
                         android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -310,7 +312,9 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:gravity="center"
-                            android:text="定速微调 ±5"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="定速微调"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
 
