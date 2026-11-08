@@ -1,0 +1,2 @@
+# 车机端 shell 脚本必须保持 LF：Android 4.4 的 sh 遇到 CRLF 会直接语法错误
+*.sh text eol=lf
