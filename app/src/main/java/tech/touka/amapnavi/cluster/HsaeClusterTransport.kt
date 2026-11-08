@@ -38,33 +38,33 @@ class HsaeClusterTransport : ClusterTransport {
     private var lastError: String? = null
 
     override fun sendTbt(frame: TbtFrame): Boolean =
-        transact(navBinder(), NAV_DESCRIPTOR, TX_TBT) { p ->
+        transact(navBinder(), NAV_DESCRIPTOR, TX_TBT, { p ->
             HsaeFrameCodec.writeTbt(ParcelSinkAdapter(p), frame)
-        }
+        }) { nav = null }
 
     override fun sendSpeed(frame: SpeedFrame): Boolean =
-        transact(navBinder(), NAV_DESCRIPTOR, TX_SPEED) { p ->
+        transact(navBinder(), NAV_DESCRIPTOR, TX_SPEED, { p ->
             HsaeFrameCodec.writeSpeed(ParcelSinkAdapter(p), frame)
-        }
+        }) { nav = null }
 
     override fun sendEst(frame: EstFrame): Boolean =
-        transact(navBinder(), NAV_DESCRIPTOR, TX_EST) { p ->
+        transact(navBinder(), NAV_DESCRIPTOR, TX_EST, { p ->
             HsaeFrameCodec.writeEst(ParcelSinkAdapter(p), frame)
-        }
+        }) { nav = null }
 
     override fun sendText(frame: TextFrame): Boolean =
-        transact(vehicleBinder(), VEHICLE_DESCRIPTOR, TX_INFO) { p ->
+        transact(vehicleBinder(), VEHICLE_DESCRIPTOR, TX_INFO, { p ->
             HsaeFrameCodec.writeText(ParcelSinkAdapter(p), frame)
-        }
+        }) { vehicle = null }
 
     override fun sendAdas(payload: ByteArray, type: Int): Boolean =
-        transact(navBinder(), NAV_DESCRIPTOR, TX_ADAS) { p ->
+        transact(navBinder(), NAV_DESCRIPTOR, TX_ADAS, { p ->
             HsaeFrameCodec.writeAdas(ParcelSinkAdapter(p), payload, type)
-        }
+        }) { nav = null }
 
     override fun probe(): ProbeResult {
         val binder = navBinder() ?: return ProbeResult.ServiceMissing
-        val ok = transact(binder, NAV_DESCRIPTOR, TX_GET_NAV_STATUS) { }
+        val ok = transact(binder, NAV_DESCRIPTOR, TX_GET_NAV_STATUS, { }) { nav = null }
         return when {
             ok -> ProbeResult.Ok
             permissionDenied -> ProbeResult.PermissionDenied
@@ -102,7 +102,8 @@ class HsaeClusterTransport : ClusterTransport {
         binder: IBinder?,
         descriptor: String,
         code: Int,
-        write: (Parcel) -> Unit
+        write: (Parcel) -> Unit,
+        onError: () -> Unit = {}
     ): Boolean {
         if (binder == null || !binder.isBinderAlive) return false
         val data = Parcel.obtain()
@@ -119,8 +120,7 @@ class HsaeClusterTransport : ClusterTransport {
             false
         } catch (t: Throwable) {
             lastError = "${t.javaClass.simpleName}: ${t.message}"
-            nav = null
-            vehicle = null
+            onError()
             false
         } finally {
             reply.recycle()

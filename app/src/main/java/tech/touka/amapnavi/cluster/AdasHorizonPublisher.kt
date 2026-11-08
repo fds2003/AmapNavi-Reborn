@@ -79,8 +79,8 @@ class AdasHorizonPublisher(
      */
     fun buildMeta(): ByteArray {
         val fields = MetaFields(
-            field0 = metaCounter,                // byte0[0..1] 消息序号
-            field2 = 2                          // byte0[5..7] 帧类型标志（常规周期帧）
+            msgSeq = metaCounter,                // byte0[0..1] 消息序号
+            frameTypeFlag = 2                    // byte0[5..7] 帧类型标志（常规周期帧）
         )
         return AdasPayloadCodec.buildMeta(fields)
     }
@@ -90,7 +90,7 @@ class AdasHorizonPublisher(
         val lane = navi.suggestLanes.size.coerceAtMost(31)
         val heading = navi.carDirection.let { if (it in 0..360) it / HEADING_STEP_DEG else 0 }
         val fields = PositionFields(
-            field0 = lane,          // byte0[0..4] 车道号
+            laneId = lane,          // byte0[0..4] 车道号
             field3 = heading,      // byte2[0..5] 航向（6°/格）
             field8 = 0             // byte4 高程（未知，0）
         )
@@ -101,8 +101,8 @@ class AdasHorizonPublisher(
     fun buildSegment(navi: NaviState): ByteArray {
         val limitCode = navi.roadSpeedLimit / SPEED_LIMIT_CODE_STEP
         val fields = SegmentFields(
-            field1 = 2,                                    // 消息类型 = segment（byte0[5..7]）
-            field2 = DEFAULT_SEGMENT_ID,                   // 段 ID/偏移（byte1）
+            msgType = 2,                                    // 消息类型 = segment（byte0[5..7]）
+            segId = DEFAULT_SEGMENT_ID,                   // 段 ID/偏移（byte1）
             field6 = limitCode.coerceAtMost(0x1F)          // 限速编码（5 位，byte3）
         )
         return AdasPayloadCodec.buildSegment(fields)

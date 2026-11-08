@@ -157,7 +157,7 @@ class AdasHorizonPublisherTest {
         val p = AdasHorizonPublisher(FakeTransport(), FakeSettings(adasEnabled = true))
         val payload = p.buildPosition(navi(lanes = 3, direction = 45))
         val expected = AdasPayloadCodec.buildPosition(
-            tech.touka.amapnavi.cluster.PositionFields(field0 = 3, field3 = 7)
+            tech.touka.amapnavi.cluster.PositionFields(laneId = 3, field3 = 7)
         )
         assertEquals(expected.contentToString(), payload.contentToString())
     }

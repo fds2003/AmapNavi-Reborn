@@ -4,12 +4,15 @@ package tech.touka.amapnavi.cluster
  * ADAS Position（HSAE type 458）的 8 字节位域。
  *
  * 位偏移来自 Ghidra 对 AdasManager::sendPosMsg 的还原。
- * - field0（byte0[0..4]）车道号
- * - field1（byte0[5..7]）路线编号
+ * - laneId（byte0[0..4]）车道号
+ * - routeId（byte0[5..7]）路线编号
+ *
+ * 注：fieldN 中已确证语义的（laneId、routeId、msgSeq、tsHigh、tsLow、stateByte1、stateByte2、segId、roadClass、msgType）
+ * 已按 Ghidra 逆向回填；其余 fieldN 待实车标定后回填，见 17 号未完成工作。
  */
 data class PositionFields(
-    val field0: Int = 0,
-    val field1: Int = 0,
+    val laneId: Int = 0,
+    val routeId: Int = 0,
     val field2: Int = 0,
     val field3: Int = 0,
     val field4: Int = 0,
@@ -39,9 +42,9 @@ data class PositionFields(
  */
 data class SegmentFields(
     val field0: Int = 0,
-    val field1: Int = 0,
-    val field2: Int = 0,
-    val field3: Int = 0,
+    val msgType: Int = 0,
+    val segId: Int = 0,
+    val roadClass: Int = 0,
     val field4: Int = 0,
     val field5: Int = 0,
     val field6: Int = 0,
@@ -114,26 +117,26 @@ data class ProfileLongFields(
  * 位偏移来自 Ghidra 对 AdasManager::sendMetaMsg（makeMetaMsg 填充）的还原。
  * Meta 是每条 ADAS 消息流的前导帧：携带消息序号、时间戳与状态标志。
  * 主要命名字段：
- * - [f0]（byte0[0..1]）消息序号
- * - [f2]（byte0[5..7]）帧类型标志
- * - [f3]（byte1）时间戳高 8 位
- * - [f4]（byte2）时间戳低 8 位 + 标志
- * - [f10]（byte5）状态/校验字节
- * - [f11]（byte6）状态/校验字节
+ * - [msgSeq]（byte0[0..1]）消息序号
+ * - [frameTypeFlag]（byte0[5..7]）帧类型标志
+ * - [tsHigh]（byte1）时间戳高 8 位
+ * - [tsLow]（byte2）时间戳低 8 位 + 标志
+ * - [stateByte1]（byte5）状态/校验字节
+ * - [stateByte2]（byte6）状态/校验字节
  */
 data class MetaFields(
-    val field0: Int = 0,
+    val msgSeq: Int = 0,
     val field1: Int = 0,
-    val field2: Int = 0,
-    val field3: Int = 0,
-    val field4: Int = 0,
+    val frameTypeFlag: Int = 0,
+    val tsHigh: Int = 0,
+    val tsLow: Int = 0,
     val field5: Int = 0,
     val field6: Int = 0,
     val field7: Int = 0,
     val field8: Int = 0,
     val field9: Int = 0,
-    val field10: Int = 0,
-    val field11: Int = 0,
+    val stateByte1: Int = 0,
+    val stateByte2: Int = 0,
     val field12: Int = 0
 )
 
@@ -161,8 +164,8 @@ object AdasPayloadCodec {
 
     fun buildPosition(fields: PositionFields): ByteArray {
         val writer = BitWriter(8)
-        writer.set(bitOffset = 0, width = 5, value = fields.field0)
-        writer.set(bitOffset = 5, width = 3, value = fields.field1)
+        writer.set(bitOffset = 0, width = 5, value = fields.laneId)
+        writer.set(bitOffset = 5, width = 3, value = fields.routeId)
         writer.set(bitOffset = 8, width = 8, value = fields.field2)
         writer.set(bitOffset = 16, width = 6, value = fields.field3)
         writer.set(bitOffset = 22, width = 2, value = fields.field4)
@@ -181,9 +184,9 @@ object AdasPayloadCodec {
     fun buildSegment(fields: SegmentFields): ByteArray {
         val writer = BitWriter(8)
         writer.set(bitOffset = 0, width = 5, value = fields.field0)
-        writer.set(bitOffset = 5, width = 3, value = fields.field1)
-        writer.set(bitOffset = 8, width = 8, value = fields.field2)
-        writer.set(bitOffset = 16, width = 6, value = fields.field3)
+        writer.set(bitOffset = 5, width = 3, value = fields.msgType)
+        writer.set(bitOffset = 8, width = 8, value = fields.segId)
+        writer.set(bitOffset = 16, width = 6, value = fields.roadClass)
         writer.set(bitOffset = 22, width = 2, value = fields.field4)
         writer.set(bitOffset = 24, width = 1, value = fields.field5)
         writer.set(bitOffset = 25, width = 5, value = fields.field6)
@@ -265,18 +268,18 @@ object AdasPayloadCodec {
 
     fun buildMeta(fields: MetaFields): ByteArray {
         val writer = BitWriter(8)
-        writer.set(bitOffset = 0, width = 2, value = fields.field0)
+        writer.set(bitOffset = 0, width = 2, value = fields.msgSeq)
         writer.set(bitOffset = 2, width = 3, value = fields.field1)
-        writer.set(bitOffset = 5, width = 3, value = fields.field2)
-        writer.set(bitOffset = 8, width = 8, value = fields.field3)
-        writer.set(bitOffset = 16, width = 1, value = fields.field4)
+        writer.set(bitOffset = 5, width = 3, value = fields.frameTypeFlag)
+        writer.set(bitOffset = 8, width = 8, value = fields.tsHigh)
+        writer.set(bitOffset = 16, width = 1, value = fields.tsLow)
         writer.set(bitOffset = 17, width = 3, value = fields.field5)
         writer.set(bitOffset = 20, width = 2, value = fields.field6)
         writer.set(bitOffset = 22, width = 2, value = fields.field7)
         writer.set(bitOffset = 24, width = 8, value = fields.field8)
         writer.set(bitOffset = 32, width = 7, value = fields.field9)
-        writer.set(bitOffset = 39, width = 1, value = fields.field10)
-        writer.set(bitOffset = 40, width = 8, value = fields.field11)
+        writer.set(bitOffset = 39, width = 1, value = fields.stateByte1)
+        writer.set(bitOffset = 40, width = 8, value = fields.stateByte2)
         writer.set(bitOffset = 48, width = 7, value = fields.field12)
         return writer.toByteArray()
     }

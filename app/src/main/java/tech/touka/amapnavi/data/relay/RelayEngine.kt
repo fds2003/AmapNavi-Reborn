@@ -71,7 +71,12 @@ class RelayEngine private constructor(context: Context) {
     private val settingsRepository = UserSettingsRepository.getInstance(appContext)
     private val soundEngine = SoundFeedbackEngine(appContext)
     private val decoder = AmapBroadcastDecoder()
-    private val rampSpeedPlanner = RampSpeedPlanner()
+    /** R-9：匝道参数接入设置页——目标速度与起始距离随设置页保存值生效。 */
+    private val rampSpeedPlanner = RampSpeedPlanner(
+        rampTargetSpeedKmh = settingsRepository.getInt(UserSettingsRepository.KEY_RAMP_SLOWDOWN_SPEED_H, 60),
+        decelStartDistanceM = settingsRepository.getInt(UserSettingsRepository.KEY_RAMP_SLOWDOWN_DIST_H, 500)
+        // 减速度 decelAcceleration 保持默认 1.0f
+    )
 
     private val clusterRuntime = ClusterRuntime(
         transport = HsaeClusterTransport(),

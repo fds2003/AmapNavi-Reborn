@@ -30,7 +30,7 @@ class AdasPayloadCodecTest {
     fun `Position字段位偏移正确`() {
         val payload = AdasPayloadCodec.buildPosition(
             PositionFields(
-                field0 = 1,
+                laneId = 1,
                 field2 = 0xAB,
                 field13 = 0xCD
             )
@@ -45,8 +45,8 @@ class AdasPayloadCodecTest {
     fun `Position跨字段组合`() {
         val payload = AdasPayloadCodec.buildPosition(
             PositionFields(
-                field0 = 0b10110,
-                field1 = 0b101,
+                laneId = 0b10110,
+                routeId = 0b101,
                 field3 = 0b111111,
                 field4 = 0b10,
                 field5 = 1,
@@ -72,7 +72,7 @@ class AdasPayloadCodecTest {
         // byte0[0..4]=field0（车道号），byte0[5..7]=field1（路线编号）
         // 车道 5 | 路线 2<<5 = 5 | 0x40 = 0x45
         val payload = AdasPayloadCodec.buildPosition(
-            PositionFields(field0 = 5, field1 = 2)
+            PositionFields(laneId = 5, routeId = 2)
         )
         assertEquals(0x45.toByte(), payload[0])
     }
@@ -87,7 +87,7 @@ class AdasPayloadCodecTest {
         val payload = AdasPayloadCodec.buildSegment(
             SegmentFields(
                 field0 = 1,
-                field2 = 0xAB,
+                segId = 0xAB,
                 field17 = 3
             )
         )
@@ -198,18 +198,18 @@ class AdasPayloadCodecTest {
     fun `Meta字段位偏移正确`() {
         val payload = AdasPayloadCodec.buildMeta(
             MetaFields(
-                field0 = 1,
+                msgSeq = 1,
                 field1 = 1,
-                field2 = 2,
-                field3 = 0xAB,
-                field4 = 1,
+                frameTypeFlag = 2,
+                tsHigh = 0xAB,
+                tsLow = 1,
                 field5 = 1,
                 field6 = 0b11,
                 field7 = 0b10,
                 field8 = 0xCD,
                 field9 = 0b1010101,
-                field10 = 1,
-                field11 = 0x5F,
+                stateByte1 = 1,
+                stateByte2 = 0x5F,
                 field12 = 0b1100001
             )
         )
