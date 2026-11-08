@@ -75,6 +75,8 @@ task_poll() {
     fi
     $BB sleep 5
   done
+  # 到点自动收尾（无需人工 stop）
+  do_finalize "$OUT"
 }
 
 # ---------------- start ----------------
@@ -88,6 +90,7 @@ do_start() {
 
   echo "$OUT" > "$STATE.dir"
   echo 0 > "$STATE.seq"
+  $BB rm -f "$STATE.finalized"
 
   {
     echo "== 采集开始（车机时间 $($BB date)）=="
@@ -126,14 +129,14 @@ do_start() {
   log "  自动停止：${MINUTES} 分钟后；也可随时执行 stop"
 }
 
-# ---------------- stop ----------------
-do_stop() {
-  ensure_root
-  OUT=$($BB cat "$STATE.dir" 2>/dev/null)
-  [ -n "$OUT" ] || { echo "[ERROR] 未找到采集目录记录" >&2; exit 1; }
+# ---------------- 收尾（幂等，可被 poll 或 stop 调用）----------------
+do_finalize() {
+  OUT="$1"
+  [ -n "$OUT" ] || return 0
+  [ -f "$STATE.finalized" ] && return 0
+  echo 1 > "$STATE.finalized"
 
-  log "停止采集…"
-  $BB pkill -f "cluster_monitor.sh _task_poll" 2>/dev/null
+  log "收尾中…"
   $BB pkill -f "logcat -b main" 2>/dev/null
   $BB sleep 2
 
@@ -192,8 +195,20 @@ do_stop() {
 
   $BB tar -czf "$OUT.tar.gz" -C "$($BB dirname "$OUT")" "$($BB basename "$OUT")" 2>/dev/null
   log "完成：$OUT"
+}
+
+# ---------------- stop ----------------
+do_stop() {
+  ensure_root
+  OUT=$($BB cat "$STATE.dir" 2>/dev/null)
+  [ -n "$OUT" ] || { echo "[ERROR] 未找到采集目录记录" >&2; exit 1; }
+
+  log "停止采集…"
+  $BB pkill -f "cluster_monitor.sh _task_poll" 2>/dev/null
+  $BB sleep 1
+  do_finalize "$OUT"
   echo "分析入口：$OUT/summary.md"
-  echo "真实调用链：$OUT/binder_transactions.txt（pid 对照 meta.txt 的 ps）"
+  echo "真实调用链：$OUT/binder_chain.txt"
 }
 
 # ---------------- status ----------------
