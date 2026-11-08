@@ -4,12 +4,13 @@
 > 审查范围：`app/src/main/java/tech/touka/amapnavi/` 全部 Kotlin 源文件（28 个）
 > 结论以 HEAD 代码为准；所有问题均标注文件与行号。
 >
-> **修复进度（2026-11-08 同步）**：R-1 / R-2 / R-4 / R-5 / R-6 / R-7 / R-8 已按 TDD 修复并通过
-> 全量 155 项 JVM 单测 + `assembleDebug` 构建（Reborn 仓库 `main` 分支，commit 9b4f959 / b5938f2）。
-> 测试：`LaneWayParserTest` 新增 R-8 多推荐车道用例；`ClusterPublisherTest` 新增
-> R-2 快照读一致性 + 过期帧负向对照；R-1 为 UI 重构（JVM 单测覆盖不到控件），以
-> `assembleDebug` 编译 + 静态契约检查（SettingActivity 无重复方法残留）验证。
-> 仅剩 R-9 / R-10 / R-3 维持「规划/标定后」档。
+> **修复进度（2026-11-08 同步）**：R-1 ~ R-10 **全部** 已按 TDD 修复并全量回归通过
+> （Reborn 仓库 `main` 分支，commit 9b4f959 / b5938f2 / 3b0ec35，`testDebugUnitTest` 159 项全绿 +
+> `assembleDebug` 构建通过）。
+> 测试：`LaneWayParserTest`（R-8）、`ClusterPublisherTest`（R-2）、`RampSpeedPlannerTest`（R-9 参数注入）、
+> `HsaeClusterTransportContractTest`（R-10 静态契约）；R-1 为 UI 重构以编译 + 静态检查验证；
+> R-3 为机械重命名（AdasPayloadCodec 已确证语义字段回填，位布局不变，`AdasPayloadCodecTest` 字节契约全绿）。
+> 20 号审查问题清单全部闭环。
 
 ---
 
@@ -222,6 +223,13 @@ AdasPayloadCodec.buildPosition(PositionFields(field0 = laneId, field3 = tsHigh))
 
 **说明**：这是逆向工程的合理起点，`17_未完成工作` 中有标注"实车标定后回填语义名"。**标定完成后必须用语义名替换 `fieldN`**，否则该文件永远无法在不看 Ghidra 文档的情况下维护。
 
+> ✅ 状态：已修复（commit 3b0ec35，按 Ghidra 逆向语义机械回填已确证字段名）。
+> PositionFields `field0→laneId`/`field1→routeId`；SegmentFields `field1→msgType`/`field2→segId`/`field3→roadClass`；
+> MetaFields `field0→msgSeq`/`field2→frameTypeFlag`/`field3→tsHigh`/`field4→tsLow`/`field10→stateByte1`/`field11→stateByte2`。
+> 未标定字段（Position field2..13、Segment field0/4..19、Meta field1/5..9/12、ProfileShort/ProfileLong 全部）保留 `fieldN`。
+> **BitWriter 位偏移/宽度一字未动**，`AdasPayloadCodecTest` 13 项 + `AdasHorizonPublisherTest` 13 项全绿，
+> 证明与车机 AdasManager 的字节契约逐字节不变（纯机械重命名）。
+
 ---
 
 ### R-4 — `UserSettingsRepository` 存在裸字符串 KEY
@@ -429,6 +437,12 @@ class RampSpeedPlanner(
 
 `RampSpeedPlanner` 的三个参数无法从外部配置，调整匝道目标速度（60 km/h）需要改源码。建议把 `rampTargetSpeedKmh` 接入设置页（领航参数 Tab 的匝道速度步进器），`RelayEngine` 构造时从 `settingsRepository` 读取。
 
+> ✅ 状态：已修复（commit 3b0ec35）。`RelayEngine` 的 `rampSpeedPlanner` 构造改读
+> `settingsRepository.getInt(KEY_RAMP_SLOWDOWN_SPEED_H, 60)`（目标速度，对应设置页领航 Tab
+> 匝道速度步进器）与 `getInt(KEY_RAMP_SLOWDOWN_DIST_H, 500)`（起始距离，对应匝道距离步进器，
+> 缺失兜底 500 与原构造默认一致）；`decelAcceleration` 保持默认 1.0f。设置页改匝道参数即生效。
+> `RampSpeedPlannerTest` 新增参数注入用例验证非默认参数行为。
+
 ---
 
 ### R-10 — `HsaeClusterTransport.transact` 异常后同时清空 `nav` 和 `vehicle`
@@ -472,6 +486,13 @@ override fun sendTbt(frame: TbtFrame): Boolean =
     }
 ```
 
+> ✅ 状态：已修复（commit 3b0ec35）。`transact` 加 `onError: () -> Unit = {}` 参数，
+> `catch(Throwable)` 不再无条件双清 `nav`/`vehicle`，改调调用方指定回调：
+> `sendTbt/sendSpeed/sendEst/sendAdas/probe`（走 nav）传 `{ nav = null }`，`sendText`（走 vehicle）
+> 传 `{ vehicle = null }`；`close()` 保留双清（显式关闭语义正确）。成功路径不变。
+> 实车 HSAE Binder 路径行为需真车验证，JVM 侧以 `HsaeClusterTransportContractTest`
+> （3 项静态契约：catch 不再双清、nav 回调 5 处 / vehicle 回调 1 处、签名含 onError）覆盖。
+
 ---
 
 ## 3. 实施优先级
@@ -484,10 +505,10 @@ override fun sendTbt(frame: TbtFrame): Boolean =
 | **近期** | R-6 prefListener 监听完整 KEY 集 | 5 行 | 低 | 参数立即生效 | ✅ 已修（setFloat 末尾刷新） |
 | **近期** | R-2 ClusterPublisher 快照化 | 15 行 | 低 | 消除跨线程组合读 | ✅ 已修 |
 | **近期** | R-8 targetLaneIndex 中位数取法 | 3 行 | 低 | 多推荐车道场景正确 | ✅ 已修 |
-| **近期** | R-10 transact 只清空出错 binder | 20 行重构 | 低 | 减少不必要的反射 | ⏸ 未做（Binder 反射路径，需实车验证） |
+| **近期** | R-10 transact 只清空出错 binder | 20 行重构 | 低 | 减少不必要的反射 | ✅ 已修（onError 回调，3b0ec35） |
 | **规划** | R-1 SettingActivity 退化为壳 | 删除 ~200 行 | 中（需完整回归） | 消灭重复代码 | ✅ 已修（b5938f2，实际删 382 行） |
-| **规划** | R-9 RampSpeedPlanner 参数接入设置页 | 30 行 | 低 | 匝道目标速度可配 | ⏸ 未做 |
-| **标定后** | R-3 AdasPayloadCodec 语义名替换 | 60+ 字段重命名 | 低（机械替换） | 可维护性 | ⏸ 待实车标定 |
+| **规划** | R-9 RampSpeedPlanner 参数接入设置页 | 30 行 | 低 | 匝道目标速度可配 | ✅ 已修（读设置页 KEY，3b0ec35） |
+| **标定后** | R-3 AdasPayloadCodec 语义名替换 | 60+ 字段重命名 | 低（机械替换） | 可维护性 | ✅ 已修（已确证字段回填+位布局不变，3b0ec35） |
 
 ---
 
