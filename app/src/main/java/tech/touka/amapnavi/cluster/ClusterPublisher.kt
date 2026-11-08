@@ -99,9 +99,13 @@ class ClusterPublisher(
         }
 
         val snap = navSnapshot   // 读一次快照，后续全用 snap（navi 与 receivedAt 组合一致）
-        // 罗盘模式（已发过罗盘帧）放宽超时：地图态航向事件驱动、稀疏，且不参与控车
-        val timeoutMs = if (lastTbt?.displayType == DISPLAY_TYPE_COMPASS) COMPASS_TIMEOUT_MS else TIMEOUT_MS
-        if (!snap.navi.navValid || now - snap.receivedAt > timeoutMs) {
+        // 罗盘模式数据超时放宽：地图态航向（车机 GPS 兜底）事件驱动、稀疏，且不参与控车
+        val compassHold = !snap.navi.navValid || lastTbt?.displayType == DISPLAY_TYPE_COMPASS
+        val timeoutMs = if (compassHold) COMPASS_TIMEOUT_MS else TIMEOUT_MS
+        // 有航向即可进入罗盘模式（未导航时航向来自车机 GPS）
+        val hasHeading = snap.navi.carDirection in 0..360
+        val live = snap.navi.navValid || hasHeading
+        if (!live || now - snap.receivedAt > timeoutMs) {
             // 诊断心跳：每约 5 秒打一次"为何不接管"，避免静止时刷屏
             if (now - lastIdleLogAt >= 5_000L) {
                 lastIdleLogAt = now

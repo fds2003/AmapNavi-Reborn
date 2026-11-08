@@ -25,13 +25,13 @@ class ClusterMapperTest {
         assertEquals(65, ClusterMapper.mapTurnType(10))
         assertEquals(65, ClusterMapper.mapTurnType(18))
         assertEquals(65, ClusterMapper.mapTurnType(19))
-        assertEquals(70, ClusterMapper.mapTurnType(3))
-        assertEquals(67, ClusterMapper.mapTurnType(4))
-        assertEquals(71, ClusterMapper.mapTurnType(5))
-        assertEquals(71, ClusterMapper.mapTurnType(16))
-        assertEquals(66, ClusterMapper.mapTurnType(6))
-        assertEquals(69, ClusterMapper.mapTurnType(7))
-        assertEquals(68, ClusterMapper.mapTurnType(8))
+        assertEquals(67, ClusterMapper.mapTurnType(3))
+        assertEquals(70, ClusterMapper.mapTurnType(4))
+        assertEquals(66, ClusterMapper.mapTurnType(5))
+        assertEquals(66, ClusterMapper.mapTurnType(16))
+        assertEquals(71, ClusterMapper.mapTurnType(6))
+        assertEquals(68, ClusterMapper.mapTurnType(7))
+        assertEquals(69, ClusterMapper.mapTurnType(8))
         assertEquals(72, ClusterMapper.mapTurnType(9))
     }
 
@@ -102,7 +102,7 @@ class ClusterMapperTest {
     @Test
     fun `TBT帧包含显示码和距离`() {
         val f = ClusterMapper.formatTbt(icon = 3, meters = 1500)
-        assertEquals(70, f.displayType)
+        assertEquals(67, f.displayType)
         assertEquals(1, f.distVal)
         assertEquals(1, f.scale)
         assertEquals(5, f.frac)
@@ -227,7 +227,7 @@ class ClusterMapperTest {
             trafficLightSeconds = -1
         )
         val frame = ClusterMapper.toFrame(navi, nowMs = 0L, etaMode = 2)
-        assertEquals(TbtFrame(70, 0, 1, 1, 5), frame.tbt)
+        assertEquals(TbtFrame(67, 0, 1, 1, 5), frame.tbt)
         assertEquals(SpeedFrame(100), frame.speed)
         assertEquals(12, frame.est.distVal)
         assertEquals(1, frame.est.unit)
@@ -253,20 +253,34 @@ class ClusterMapperTest {
     }
 
     @Test
-    fun `无转向时输出罗盘帧`() {
+    fun `无导航且有航向时输出罗盘帧`() {
         val navi = NaviState(
-            navValid = true,
+            navValid = false,          // 地图态：高德不给导航数据，航向来自车机 GPS
             tbtTurnType = 0,
             tbtDistance = 0,
             carDirection = 90,
-            roadSpeedLimit = 100,
-            nextRoadName = "机场高速"
+            roadSpeedLimit = 0
         )
         val frame = ClusterMapper.toFrame(navi, nowMs = 0L, etaMode = 2)
         assertEquals(8, frame.tbt.displayType)
         assertEquals(36, frame.tbt.direction)
         assertEquals(0, frame.tbt.distVal)
         assertEquals(0, frame.tbt.scale)
+    }
+
+    @Test
+    fun `导航中不出现罗盘帧，避免与箭头交替`() {
+        // 高德导航中部分 10001 帧不带 ICON，tbtTurnType 会为 0；
+        // 此时必须保持箭头通道，不能切到罗盘，否则仪表会来回跳。
+        val navi = NaviState(
+            navValid = true,
+            tbtTurnType = 0,
+            tbtDistance = 159,
+            carDirection = 90,
+            roadSpeedLimit = 100
+        )
+        val frame = ClusterMapper.toFrame(navi, nowMs = 0L, etaMode = 2)
+        assertEquals("导航中不得切罗盘", 255, frame.tbt.displayType)
     }
 
     @Test

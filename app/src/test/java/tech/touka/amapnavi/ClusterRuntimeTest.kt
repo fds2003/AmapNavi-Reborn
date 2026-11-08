@@ -106,7 +106,7 @@ class ClusterRuntimeTest {
         scope.cancel()
 
         val calls = transport.calls.toList()
-        assertTrue(calls.any { it.startsWith("tbt:70:") })
+        assertTrue(calls.any { it.startsWith("tbt:67:") })
         assertTrue(calls.contains("speed:100"))
         assertTrue(calls.any { it.startsWith("est:12:") })
         assertTrue(calls.contains("text:机场高速"))

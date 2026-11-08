@@ -23,7 +23,10 @@ object ClusterMapper {
     ): ClusterFrame {
         val destFlag = navi.tbtTurnType == ICON_DESTINATION &&
             navi.tbtDistance <= DEST_FLAG_DISTANCE_M
-        val compassMode = !destFlag && navi.tbtTurnType == 0 && navi.carDirection in 0..360
+        // 罗盘只在"未导航"时出现：导航中高德部分 10001 帧不带 ICON，
+        // 若按"无转向即罗盘"判定，仪表会在箭头与罗盘之间来回切换。
+        val compassMode = !navi.navValid && !destFlag &&
+            navi.tbtTurnType == 0 && navi.carDirection in 0..360
         val tbt = when {
             destFlag -> TbtFrame(
                 displayType = 2,
@@ -84,15 +87,19 @@ object ClusterMapper {
      *
      * 已标定项直接启用；环岛/收费站/匝道等未标定项只有打开 experimental 才发候选码，
      * 默认一律 255，避免盲发错误箭头。
+     *
+     * 左右镜像：实车（HSAE 车机）观察发现仪表箭头左右与高德地图相反，
+     * 故全部左右成对码位互换（直行/掉头/目的地不受影响）：
+     *   ICON=3 <-> 4（主要左右转）、5/16 <-> 6（左前/右前）、7 <-> 8（左后/右后）
      */
     fun mapTurnType(icon: Int, experimental: Boolean = false): Int = when (icon) {
         2, 10, 18, 19 -> 65
-        3 -> 70
-        4 -> 67
-        5, 16 -> 71
-        6 -> 66
-        7 -> 69
-        8 -> 68
+        3 -> 67
+        4 -> 70
+        5, 16 -> 66
+        6 -> 71
+        7 -> 68
+        8 -> 69
         9 -> 72
         13 -> 112
         11 -> if (experimental) 96 else 255     // 进入环岛

@@ -109,7 +109,7 @@ class ClusterPublisherTest {
         p.onNaviState(navi(), 1_000L)
         p.tick(1_000L)
 
-        assertTrue(t.calls.any { it.startsWith("tbt:70:") })
+        assertTrue(t.calls.any { it.startsWith("tbt:67:") })
         assertTrue(t.calls.any { it == "speed:100" })
         assertTrue(t.calls.any { it.startsWith("est:12:1:") })
         assertTrue(t.calls.any { it == "text:机场高速" })
@@ -137,7 +137,7 @@ class ClusterPublisherTest {
 
         p.onNaviState(navi(tbt = 800, icon = 4), 1_600L)
         p.tick(1_600L)
-        assertTrue(t.calls.any { it.startsWith("tbt:67:800:0:0") })
+        assertTrue(t.calls.any { it.startsWith("tbt:70:800:0:0") })
     }
 
     @Test
@@ -271,7 +271,7 @@ class ClusterPublisherTest {
     // 罗盘帧若按 2 秒保活重发，HSAE 仪表每次重绘外圈 → 圆圈闪烁。
     // ---------------------------------------------------------------------
 
-    private fun compassNavi(dir: Int, valid: Boolean = true, now: Long = 1_000L) = NaviState(
+    private fun compassNavi(dir: Int, valid: Boolean = false, now: Long = 1_000L) = NaviState(
         navValid = valid,
         tbtDistance = 0,
         tbtTurnType = 0,
@@ -327,13 +327,14 @@ class ClusterPublisherTest {
     }
 
     @Test
-    fun `导航结束仍立即交还仪表`() {
+    fun `无航向且未导航时才交还仪表`() {
         val t = FakeTransport()
         val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
         p.onNaviState(compassNavi(90), 1_000L)
         p.tick(1_000L)
 
-        p.onNaviState(compassNavi(90, valid = false), 1_100L)
+        // 航向丢失（-1）且没有导航数据：交还
+        p.onNaviState(compassNavi(-1), 1_100L)
         p.tick(1_100L)
         assertEquals(ClusterState.RELEASED, p.status.value.state)
     }

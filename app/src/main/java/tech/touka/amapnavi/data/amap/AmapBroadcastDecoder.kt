@@ -48,8 +48,12 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                     ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_DIST, 0)
                 val tbtDistance = intent.getIntExtra("SEG_REMAIN_DIS", 0).takeIf { it > 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_SEG_REMAIN_DIS, 0)
-                val tbtTurnType = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_TURN_TYPE, 0)
+                // 导航中部分 10001 帧不带 ICON：保留上一转向图标，
+                // 否则 tbtTurnType 归零会让仪表在"转向箭头"与"罗盘"之间来回切换。
+                val iconNow = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_TURN_TYPE, 0).takeIf { it > 0 }
+                val navValidNow = readNavValid(intent, default = true)
+                val tbtTurnType = iconNow ?: if (navValidNow) current.tbtTurnType else 0
                 val roadCate = readRoadCate(intent)
                 val routeRemainDistance = intent.getIntExtra(
                     AmapContract.EXTRA_ROUTE_REMAIN_DIS, current.routeRemainDistance
@@ -156,8 +160,12 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                     ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_DIST, 0)
                 val tbtDistance = intent.getIntExtra("SEG_REMAIN_DIS", 0).takeIf { it > 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_SEG_REMAIN_DIS, 0)
-                val tbtTurnType = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_TURN_TYPE, 0)
+                // 导航中部分 10001 帧不带 ICON：保留上一转向图标，
+                // 否则 tbtTurnType 归零会让仪表在"转向箭头"与"罗盘"之间来回切换。
+                val iconNow = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_TURN_TYPE, 0).takeIf { it > 0 }
+                val navValidNow = readNavValid(intent, default = current.navValid)
+                val tbtTurnType = iconNow ?: if (navValidNow) current.tbtTurnType else 0
                 val roadCate = readRoadCate(intent)
                 val trafficLightSeconds = intent.getIntExtra("redLightCountDownSeconds", -1).takeIf { it >= 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_TRAFFIC_LIGHT_SECONDS, -1)

@@ -20,6 +20,7 @@ import tech.touka.amapnavi.core.event.SoundEvent
 import tech.touka.amapnavi.core.model.CarState
 import tech.touka.amapnavi.core.model.NaviState
 import tech.touka.amapnavi.core.model.OvertakeSettings
+import tech.touka.amapnavi.data.gps.withFallbackHeading
 import tech.touka.amapnavi.cluster.ClusterRuntime
 import tech.touka.amapnavi.cluster.ClusterStatus
 import tech.touka.amapnavi.cluster.HsaeClusterTransport
@@ -106,6 +107,12 @@ class RelayEngine private constructor(context: Context) {
 
     val naviStateFlow: StateFlow<NaviState> = decoder.naviStateFlow
 
+    /** 车机 GPS 航向：高德未导航时的罗盘兜底数据源（不依赖 C3）。 */
+    private val gpsHeadingProvider = tech.touka.amapnavi.data.gps.GpsHeadingProvider(appContext)
+
+    /** 高德状态 + GPS 航向合并后的导航状态，仅用于仪表发布（UI 仍看上方的纯高德状态）。 */
+    private val _mergedNaviFlow = MutableStateFlow(NaviState())
+
     private val _deviceFlow = MutableStateFlow<C3Device?>(null)
     val deviceFlow: StateFlow<C3Device?> = _deviceFlow
 
@@ -186,7 +193,18 @@ class RelayEngine private constructor(context: Context) {
         startTrafficLightMonitor()
         startSideReminderMonitor()
         startTelemetryWatchdog()
-        clusterRuntime.start(scope, decoder.naviStateFlow)
+        gpsHeadingProvider.start()
+        scope.launch {
+            decoder.naviStateFlow.collect {
+                _mergedNaviFlow.value = it.withFallbackHeading(gpsHeadingProvider.headingFlow.value)
+            }
+        }
+        scope.launch {
+            gpsHeadingProvider.headingFlow.collect { heading ->
+                _mergedNaviFlow.value = decoder.naviStateFlow.value.withFallbackHeading(heading)
+            }
+        }
+        clusterRuntime.start(scope, _mergedNaviFlow)
         _overtakeStatusFlow.value = stateMachine.status()
     }
 
