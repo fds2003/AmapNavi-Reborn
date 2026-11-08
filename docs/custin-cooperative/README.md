@@ -61,6 +61,9 @@
 | `16_L1详细架构与实现设计.md` | L1 的组件架构、线程模型、状态机、代码级实现设计与测试设计 |
 | `17_未完成工作与剩余事项.md` | 待完成/待实车标定事项总表（ADAS/L1/广播/C3/工程），按执行顺序 |
 | `18_两端优化方案.md` | 9 项优化清单（P0 BUG-1/2 接管撤销、P1 安全参数/雷达降级、P2 UX/工程），含行号定位与实施顺序 |
+| `19_C3端代码质量审查.md` | C3 端 Q-1~Q-9 审查与修复记录（TDD，170→193 项测试） |
+| `20_Reborn端代码质量审查.md` | Reborn 端 R-1~R-10 审查与修复记录（含实车定位的仪表闪动/左右相反修复） |
+| `21_车机监控与日志采集.md` | 车机端全链路监控脚本（日志 + Binder 事务），取证方法与坑 |
 
 ---
 
@@ -110,3 +113,23 @@ ADB_DEVICE=192.168.x.x:5555 ./scripts/calibrate_cluster.sh
   先 `--seq 65` 单帧冒烟再跑全流程。
 - 标定结果回填：`AdasPayloadCodec` 注释、`ClusterMapper.mapTurnType`
   候选码、`17_未完成工作与剩余事项.md` 勾选 `[实车]`。
+
+---
+
+## 7. 全链路监控脚本
+
+`scripts/device/cluster_monitor.sh`（车机端，需 root）与 `scripts/monitor_cluster_baidu.sh`
+（PC 端，无需 root）用于同时抓取 **百度 / 高德 / HSAE / Reborn** 四方日志与内核 Binder 事务，
+产物落在车机 `/sdcard/cluster_mon/<时间戳>/`，含可读的 `binder_chain.txt`。
+
+```bash
+adb push scripts/device/cluster_monitor.sh /data/local/tmp/
+adb shell "su -c 'chmod 755 /data/local/tmp/cluster_monitor.sh'"
+STAMP=$(date +%Y%m%d_%H%M%S)
+adb shell "su -c 'sh /data/local/tmp/cluster_monitor.sh start 10 $STAMP'"
+# ……复现问题……
+adb shell "su -c 'sh /data/local/tmp/cluster_monitor.sh stop'"
+adb pull /sdcard/cluster_mon/$STAMP
+```
+
+详细说明见 `21_车机监控与日志采集.md`。
