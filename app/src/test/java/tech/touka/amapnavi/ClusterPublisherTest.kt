@@ -172,14 +172,14 @@ class ClusterPublisherTest {
     }
 
     @Test
-    fun `超过3秒无广播自动交还`() {
+    fun `超过8秒无广播自动交还`() {
         val t = FakeTransport()
         val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
         p.onNaviState(navi(), 1_000L)
         p.tick(1_000L)
         t.calls.clear()
 
-        p.tick(4_001L)
+        p.tick(9_001L)
         assertTrue(t.calls.contains("tbt:3:0:0:0"))
         assertTrue(t.calls.contains("text:"))
         assertEquals(ClusterState.RELEASED, p.status.value.state)
@@ -249,7 +249,7 @@ class ClusterPublisherTest {
         p.tick(1_000L)
         t.calls.clear()
 
-        p.tick(4_001L)  // 快照 receivedAt=1_000，4_001-1_000=3_001 > 3_000
+        p.tick(9_001L)  // 快照 receivedAt=1_000，9_001-1_000=8_001 > 8_000
         assertEquals(ClusterState.RELEASED, p.status.value.state)
     }
 

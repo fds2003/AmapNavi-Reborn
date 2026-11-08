@@ -16,7 +16,14 @@ class ClusterPublisher(
 ) {
 
     companion object {
-        private const val TIMEOUT_MS = 3_000L
+        /**
+         * 导航数据超时。
+         *
+         * 高德 10001 是事件驱动，实车观察到导航中也会出现 4~5 秒的空档；
+         * 原本 3 秒会在空档期把仪表交还、下一条广播再接管，造成反复闪烁。
+         * 取 8 秒：既覆盖正常空档，又能在导航真正中断时及时交还。
+         */
+        private const val TIMEOUT_MS = 8_000L
 
         /**
          * 罗盘模式（地图态、无导航）的数据超时。

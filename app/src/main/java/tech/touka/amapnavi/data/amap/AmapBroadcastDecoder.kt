@@ -40,14 +40,20 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
         when (keyType) {
             AmapContract.KEY_TYPE_NAVI_STATE -> {
                 // 10001: 导航基础数据广播 (限速、测速、TBT、路况)
-                val roadLimitSpeed = intent.getIntExtra("LIMITED_SPEED", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_LIMIT_SPEED, 0)
-                val cameraSpeedLimit = intent.getIntExtra("CAMERA_SPEED", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_SPEED, 0)
-                val cameraDistance = intent.getIntExtra("CAMERA_DIST", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_DIST, 0)
-                val tbtDistance = intent.getIntExtra("SEG_REMAIN_DIS", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_SEG_REMAIN_DIS, 0)
+                // 高德会交替下发两类 10001：带引导数据的帧 与 全零的刷新帧。
+                // 零值一律视为"本次不更新"，保留上一帧，否则仪表距离/限速牌会反复闪。
+                val rawLimit = intent.getIntExtra("LIMITED_SPEED", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_LIMIT_SPEED, 0).takeIf { it > 0 }
+                val rawCamSpeed = intent.getIntExtra("CAMERA_SPEED", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_SPEED, 0).takeIf { it > 0 }
+                val rawCamDist = intent.getIntExtra("CAMERA_DIST", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_DIST, 0).takeIf { it > 0 }
+                val rawSegDist = intent.getIntExtra("SEG_REMAIN_DIS", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_SEG_REMAIN_DIS, 0).takeIf { it > 0 }
+                val roadLimitSpeed = rawLimit ?: current.roadSpeedLimit
+                val cameraSpeedLimit = rawCamSpeed ?: current.cameraSpeedLimit
+                val cameraDistance = rawCamDist ?: current.cameraDistance
+                val tbtDistance = rawSegDist ?: current.tbtDistance
                 // 导航中部分 10001 帧不带 ICON：保留上一转向图标，
                 // 否则 tbtTurnType 归零会让仪表在"转向箭头"与"罗盘"之间来回切换。
                 val iconNow = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
@@ -152,14 +158,18 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                 // 兼顾未声明 KEY_TYPE 的全量字段广播
                 val driveWayRaw = safeStringExtra(intent, AmapContract.EXTRA_DRIVE_WAY)
                     ?: safeStringExtra(intent, "driveWay") ?: ""
-                val roadLimitSpeed = intent.getIntExtra("LIMITED_SPEED", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_LIMIT_SPEED, 0)
-                val cameraSpeedLimit = intent.getIntExtra("CAMERA_SPEED", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_SPEED, 0)
-                val cameraDistance = intent.getIntExtra("CAMERA_DIST", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_DIST, 0)
-                val tbtDistance = intent.getIntExtra("SEG_REMAIN_DIS", 0).takeIf { it > 0 }
-                    ?: intent.getIntExtra(AmapContract.EXTRA_SEG_REMAIN_DIS, 0)
+                val roadLimitSpeed = (intent.getIntExtra("LIMITED_SPEED", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_LIMIT_SPEED, 0).takeIf { it > 0 })
+                    ?: current.roadSpeedLimit
+                val cameraSpeedLimit = (intent.getIntExtra("CAMERA_SPEED", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_SPEED, 0).takeIf { it > 0 })
+                    ?: current.cameraSpeedLimit
+                val cameraDistance = (intent.getIntExtra("CAMERA_DIST", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_CAMERA_DIST, 0).takeIf { it > 0 })
+                    ?: current.cameraDistance
+                val tbtDistance = (intent.getIntExtra("SEG_REMAIN_DIS", 0).takeIf { it > 0 }
+                    ?: intent.getIntExtra(AmapContract.EXTRA_SEG_REMAIN_DIS, 0).takeIf { it > 0 })
+                    ?: current.tbtDistance
                 // 导航中部分 10001 帧不带 ICON：保留上一转向图标，
                 // 否则 tbtTurnType 归零会让仪表在"转向箭头"与"罗盘"之间来回切换。
                 val iconNow = intent.getIntExtra("ICON", 0).takeIf { it > 0 }
