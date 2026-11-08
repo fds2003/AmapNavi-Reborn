@@ -9,7 +9,7 @@
     <!-- 1. 全局永不遮挡的顶部常驻状态头 (PERMANENT TOP HEADER, 切换任何 Tab 始终可见) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="36dp"
+        android:layout_height="44dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:text="AmapNavi-Reborn"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <TextView
@@ -29,7 +29,7 @@
             android:layout_marginStart="12dp"
             android:text="高德未连接"
             android:textColor="@color/text_muted"
-            android:textSize="13sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tv_device_status"
@@ -38,7 +38,7 @@
             android:layout_marginStart="10dp"
             android:text="C3 未连接"
             android:textColor="@color/text_muted"
-            android:textSize="13sp" />
+            android:textSize="16sp" />
     </LinearLayout>
 
     <!-- 2. 下方内容区域：FrameLayout 容器平滑切换 HUD 与 设置工作台 -->
@@ -58,7 +58,7 @@
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
-                android:layout_height="38dp"
+                android:layout_height="44dp"
                 android:scrollbars="none"
                 android:layout_marginTop="4dp">
 
@@ -71,95 +71,95 @@
                     <Button
                         android:id="@+id/btn_overtake"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="40dp"
                         android:background="@drawable/shape_button"
                         android:text="@string/btn_overtake_on"
                         android:textColor="@color/success_green"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp" />
 
                     <Button
                         android:id="@+id/btn_open_cluster_setting"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="40dp"
                         android:layout_marginStart="6dp"
                         android:background="@drawable/btn_blue"
                         android:text="仪表投影"
                         android:textColor="#FFFFFF"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp" />
 
                     <Button
                         android:id="@+id/btn_open_setting"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="40dp"
                         android:layout_marginStart="6dp"
                         android:background="@drawable/btn_blue"
                         android:text="通用设置"
                         android:textColor="#FFFFFF"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp" />
 
                     <Button
                         android:id="@+id/btn_open_nav_setting"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="40dp"
                         android:layout_marginStart="6dp"
                         android:background="@drawable/btn_blue"
                         android:text="领航参数"
                         android:textColor="#FFFFFF"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp" />
 
                     <Button
                         android:id="@+id/btn_open_overtake_setting"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="40dp"
                         android:layout_marginStart="6dp"
                         android:background="@drawable/btn_blue"
                         android:text="超车模式"
                         android:textColor="#FFFFFF"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp" />
 
                     <Button
                         android:id="@+id/btn_open_devices"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="40dp"
                         android:layout_marginStart="6dp"
                         android:background="@drawable/shape_button"
                         android:text="设备管理"
                         android:textColor="@color/text_primary"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp" />
 
                     <Button
                         android:id="@+id/btn_open_logs"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="40dp"
                         android:layout_marginStart="6dp"
                         android:background="@drawable/shape_button"
                         android:text="日志管理"
                         android:textColor="@color/text_primary"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp" />
 
                     <Button
                         android:id="@+id/btn_reset"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="40dp"
                         android:layout_marginStart="6dp"
                         android:background="@drawable/shape_button"
                         android:text="复位"
                         android:textColor="@color/text_primary"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp" />
                 </LinearLayout>
@@ -199,7 +199,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="自车车速"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="14sp" />
+                                android:textSize="18sp" />
 
                             <TextView
                                 android:id="@+id/tv_speed"
@@ -208,7 +208,7 @@
                                 android:includeFontPadding="false"
                                 android:text="0"
                                 android:textColor="@color/text_primary"
-                                android:textSize="64sp"
+                                android:textSize="76sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -217,7 +217,7 @@
                                 android:layout_marginTop="-8dp"
                                 android:text="@string/label_kmh"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="14sp" />
+                                android:textSize="18sp" />
 
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -232,7 +232,7 @@
                                     android:layout_weight="1"
                                     android:text="巡航 -- km/h"
                                     android:textColor="@color/navi_blue"
-                                    android:textSize="14sp"
+                                    android:textSize="16sp"
                                     android:textStyle="bold" />
 
                                 <TextView
@@ -242,7 +242,7 @@
                                     android:layout_weight="1"
                                     android:text="限速 --"
                                     android:textColor="@color/text_primary"
-                                    android:textSize="14sp" />
+                                    android:textSize="16sp" />
                             </LinearLayout>
 
                             <TextView
@@ -252,13 +252,13 @@
                                 android:layout_marginTop="4dp"
                                 android:text="路口 -- m"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="14sp" />
+                                android:textSize="16sp" />
 
                             <!-- 升级版醒目矢量信号灯徽章 -->
                             <TextView
                                 android:id="@+id/tv_light"
                                 android:layout_width="wrap_content"
-                                android:layout_height="26dp"
+                                android:layout_height="30dp"
                                 android:layout_marginTop="4dp"
                                 android:paddingStart="8dp"
                                 android:paddingEnd="8dp"
@@ -266,7 +266,7 @@
                                 android:background="@drawable/shape_button"
                                 android:text="路口无信号灯"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="12sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -275,7 +275,7 @@
                                 android:layout_marginTop="6dp"
                                 android:text="@string/label_lane_guide"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="13sp" />
+                                android:textSize="15sp" />
 
                             <LinearLayout
                                 android:id="@+id/lane_way_container"
@@ -303,7 +303,7 @@
                                     android:padding="6dp"
                                     android:text="左侧盲区"
                                     android:textColor="@color/text_secondary"
-                                    android:textSize="12sp" />
+                                    android:textSize="15sp" />
 
                                 <TextView
                                     android:id="@+id/tv_side_right"
@@ -316,7 +316,7 @@
                                     android:padding="6dp"
                                     android:text="右侧盲区"
                                     android:textColor="@color/text_secondary"
-                                    android:textSize="12sp" />
+                                    android:textSize="15sp" />
                             </LinearLayout>
                         </LinearLayout>
                     </ScrollView>
@@ -333,12 +333,12 @@
 
                         <Button
                             android:id="@+id/btn_cruise_dec"
-                            android:layout_width="36dp"
+                            android:layout_width="44dp"
                             android:layout_height="match_parent"
                             android:background="@drawable/shape_button"
                             android:text="−"
                             android:textColor="@color/text_primary"
-                            android:textSize="18sp" />
+                            android:textSize="22sp" />
 
                         <TextView
                             android:id="@+id/tv_cruise_adjust"
@@ -350,16 +350,16 @@
                             android:ellipsize="end"
                             android:text="定速微调"
                             android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
+                            android:textSize="14sp" />
 
                         <Button
                             android:id="@+id/btn_cruise_inc"
-                            android:layout_width="36dp"
+                            android:layout_width="44dp"
                             android:layout_height="match_parent"
                             android:background="@drawable/shape_button"
                             android:text="+"
                             android:textColor="@color/text_primary"
-                            android:textSize="18sp" />
+                            android:textSize="22sp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -376,7 +376,7 @@
                         android:layout_height="wrap_content"
                         android:text="多传感器盲区阵列"
                         android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
+                        android:textSize="15sp"
                         android:layout_marginBottom="4dp" />
 
                     <!-- 前方与侧向（3 列） -->
@@ -393,14 +393,14 @@
                             android:background="@drawable/shape_card"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="4dp">
+                            android:padding="6dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/radar_bsd_left"
                                 android:textColor="@color/text_muted"
-                                android:textSize="12sp" />
+                                android:textSize="14sp" />
 
                             <TextView
                                 android:id="@+id/tv_bsd_left"
@@ -409,7 +409,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="正常"
                                 android:textColor="@color/success_green"
-                                android:textSize="14sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -421,14 +421,14 @@
                             android:background="@drawable/shape_card"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="4dp">
+                            android:padding="6dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/radar_lead"
                                 android:textColor="@color/text_muted"
-                                android:textSize="12sp" />
+                                android:textSize="14sp" />
 
                             <TextView
                                 android:id="@+id/tv_lead"
@@ -438,7 +438,7 @@
                                 android:gravity="center"
                                 android:text="无目标"
                                 android:textColor="@color/text_primary"
-                                android:textSize="14sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -450,14 +450,14 @@
                             android:background="@drawable/shape_card"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="4dp">
+                            android:padding="6dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/radar_bsd_right"
                                 android:textColor="@color/text_muted"
-                                android:textSize="12sp" />
+                                android:textSize="14sp" />
 
                             <TextView
                                 android:id="@+id/tv_bsd_right"
@@ -466,7 +466,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="正常"
                                 android:textColor="@color/success_green"
-                                android:textSize="14sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
@@ -486,14 +486,14 @@
                             android:background="@drawable/shape_card"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="4dp">
+                            android:padding="6dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/radar_lidar_left"
                                 android:textColor="@color/text_muted"
-                                android:textSize="12sp" />
+                                android:textSize="14sp" />
 
                             <TextView
                                 android:id="@+id/tv_lidar_left"
@@ -502,7 +502,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="无目标"
                                 android:textColor="@color/text_primary"
-                                android:textSize="14sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -514,14 +514,14 @@
                             android:background="@drawable/shape_card"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="4dp">
+                            android:padding="6dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/radar_ego"
                                 android:textColor="@color/text_muted"
-                                android:textSize="12sp" />
+                                android:textSize="14sp" />
 
                             <TextView
                                 android:id="@+id/tv_ego"
@@ -531,7 +531,7 @@
                                 android:gravity="center"
                                 android:text="人工驾驶\nΔsteer 0.0°"
                                 android:textColor="@color/text_primary"
-                                android:textSize="13sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -543,14 +543,14 @@
                             android:background="@drawable/shape_card"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="4dp">
+                            android:padding="6dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/radar_lidar_right"
                                 android:textColor="@color/text_muted"
-                                android:textSize="12sp" />
+                                android:textSize="14sp" />
 
                             <TextView
                                 android:id="@+id/tv_lidar_right"
@@ -559,7 +559,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="无目标"
                                 android:textColor="@color/text_primary"
-                                android:textSize="14sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
@@ -587,7 +587,7 @@
                         android:layout_height="wrap_content"
                         android:text="待机"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="22sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -600,7 +600,7 @@
                         android:maxLines="1"
                         android:text="待机"
                         android:textColor="@color/text_secondary"
-                        android:textSize="14sp" />
+                        android:textSize="16sp" />
                 </LinearLayout>
 
                 <TextView
@@ -612,7 +612,7 @@
                     android:maxLines="3"
                     android:text="系统就绪"
                     android:textColor="@color/text_muted"
-                    android:textSize="12sp" />
+                    android:textSize="14sp" />
             </LinearLayout>
         </LinearLayout>
 
