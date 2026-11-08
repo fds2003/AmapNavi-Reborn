@@ -83,6 +83,22 @@ class RelayEngine private constructor(context: Context) {
         settings = RepoClusterSettings(settingsRepository)
     )
 
+    /**
+     * 仪表发帧诊断：默认不输出（Log.isLoggable 默认 INFO，DEBUG 被过滤）。
+     * 现场定位闪动/重绘时执行 `setprop log.tag.ClusterDbg DEBUG` 即可打开，零常态开销。
+     */
+    private val clusterDebugSink: ((String) -> Unit)? =
+        if (android.util.Log.isLoggable("ClusterDbg", android.util.Log.DEBUG)) {
+            { msg -> android.util.Log.d("ClusterDbg", msg) }
+        } else {
+            null
+        }
+
+    init {
+        clusterRuntime.setDebugSink(clusterDebugSink)
+        decoder.debugSink = clusterDebugSink
+    }
+
     val clusterStatusFlow: StateFlow<ClusterStatus> = clusterRuntime.status()
 
     private val _carStateFlow = MutableStateFlow(CarState())

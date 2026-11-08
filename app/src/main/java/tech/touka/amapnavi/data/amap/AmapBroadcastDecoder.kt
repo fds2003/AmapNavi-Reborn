@@ -19,10 +19,21 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
     private val _naviStateFlow = MutableStateFlow(NaviState())
     val naviStateFlow: StateFlow<NaviState> = _naviStateFlow
 
+    /** 诊断：记录每条广播的 keyType 与关键字段（默认 null，零开销）。 */
+    @JvmField
+    var debugSink: ((String) -> Unit)? = null
+
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null || intent.action != AmapContract.ACTION_AMAP_SEND) return
 
         val keyType = intent.getIntExtra(AmapContract.KEY_TYPE, 0)
+        debugSink?.let { sink ->
+            val dump = intent.extras?.keySet()?.joinToString("; ") { k ->
+                val v = try { intent.extras?.get(k)?.toString() } catch (e: Exception) { "<$e>" }
+                "$k=$v"
+            } ?: "null"
+            sink("RX keyType=$keyType [$dump]")
+        }
         val current = _naviStateFlow.value
         val nowMs = System.currentTimeMillis()
 

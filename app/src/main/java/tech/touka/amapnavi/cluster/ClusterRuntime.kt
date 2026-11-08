@@ -32,6 +32,7 @@ class ClusterRuntime(
     fun start(scope: CoroutineScope, flow: StateFlow<NaviState>) {
         if (started) return
         started = true
+        publisher.debugSink?.invoke("[RUNTIME] start，100ms 调度已启用")
         scheduler.scheduleAtFixedRate({
             try {
                 publisher.tick()
@@ -65,6 +66,11 @@ class ClusterRuntime(
     }
 
     fun status(): StateFlow<ClusterStatus> = publisher.status
+
+    /** 诊断：注入发帧日志回调（null 关闭）。生产默认不注入，零开销。 */
+    fun setDebugSink(sink: ((String) -> Unit)?) {
+        publisher.debugSink = sink
+    }
 
     fun sendTestFrame() {
         publisher.sendTestFrame()

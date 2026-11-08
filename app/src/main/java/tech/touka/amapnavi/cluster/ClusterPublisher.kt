@@ -17,6 +17,19 @@ class ClusterPublisher(
 
     companion object {
         private const val TIMEOUT_MS = 3_000L
+
+        /**
+         * 罗盘模式（地图态、无导航）的数据超时。
+         *
+         * 高德未导航时只发 10001 的 CAR_DIRECTION，且是事件驱动（十几秒一条）；
+         * 罗盘仅是显示用途、不参与控车，不能用导航的 3 秒看门狗，否则会反复
+         * 交还/接管，导致仪表外圈反复重绘。
+         */
+        private const val COMPASS_TIMEOUT_MS = 30_000L
+
+        /** HSAE 罗盘通道 displayType。 */
+        private const val DISPLAY_TYPE_COMPASS = 8
+
         private const val TBT_MIN_INTERVAL_MS = 500L
         private const val TBT_KEEPALIVE_MS = 2_000L
         private const val SPEED_MIN_INTERVAL_MS = 1_000L
@@ -46,24 +59,65 @@ class ClusterPublisher(
     private var lastEstAt = 0L
     private var lastTextAt = 0L
     private var lastSentSpeed = 0
+    private var lastIdleLogAt = 0L
+
+    /**
+     * 诊断回调（默认 null，生产零开销、JVM 单测不受影响）。
+     * 由宿主注入后，每次真正下发帧时回调通道/帧内容/原因，用于定位仪表重绘闪动。
+     */
+    @JvmField
+    var debugSink: ((String) -> Unit)? = null
+
+    private fun dbg(channel: String, detail: String) {
+        val sink = debugSink ?: return
+        try {
+            sink("[$channel] $detail")
+        } catch (_: Throwable) {
+            // 诊断不得影响发送链路
+        }
+    }
 
     fun onNaviState(navi: NaviState, nowMs: Long = clock()) {
+        val prev = navSnapshot.navi
         navSnapshot = NavSnapshot(navi, nowMs)   // 单次引用赋值是原子的
+        // 仅在关键字段变化时输出，避免高频刷屏
+        if (prev.navValid != navi.navValid || prev.tbtTurnType != navi.tbtTurnType ||
+            prev.carDirection != navi.carDirection || prev.roadSpeedLimit != navi.roadSpeedLimit
+        ) {
+            dbg("NAVI", "navValid=${navi.navValid} tbtIcon=${navi.tbtTurnType} tbtDist=${navi.tbtDistance} dir=${navi.carDirection} limit=${navi.roadSpeedLimit}")
+        }
     }
 
     fun tick(now: Long = clock()) {
         if (!settings.enabled) {
+            if (now - lastIdleLogAt >= 5_000L) {
+                lastIdleLogAt = now
+                dbg("IDLE", "总开关关闭(settings.enabled=false)，仪表通道不发帧")
+            }
             if (state != ClusterState.RELEASED) release(now)
             return
         }
 
         val snap = navSnapshot   // 读一次快照，后续全用 snap（navi 与 receivedAt 组合一致）
-        if (!snap.navi.navValid || now - snap.receivedAt > TIMEOUT_MS) {
-            if (state != ClusterState.RELEASED) release(now)
+        // 罗盘模式（已发过罗盘帧）放宽超时：地图态航向事件驱动、稀疏，且不参与控车
+        val timeoutMs = if (lastTbt?.displayType == DISPLAY_TYPE_COMPASS) COMPASS_TIMEOUT_MS else TIMEOUT_MS
+        if (!snap.navi.navValid || now - snap.receivedAt > timeoutMs) {
+            // 诊断心跳：每约 5 秒打一次"为何不接管"，避免静止时刷屏
+            if (now - lastIdleLogAt >= 5_000L) {
+                lastIdleLogAt = now
+                dbg("IDLE", "enabled=${settings.enabled} navValid=${snap.navi.navValid} age=${now - snap.receivedAt}ms timeout=$timeoutMs state=$state")
+            }
+            if (state != ClusterState.RELEASED) {
+                dbg("RELEASE", "navValid=${snap.navi.navValid} age=${now - snap.receivedAt}ms")
+                release(now)
+            }
             return
         }
 
-        if (state != ClusterState.ACTIVE) state = ClusterState.ACTIVE
+        if (state != ClusterState.ACTIVE) {
+            dbg("ACTIVE", "navValid=true age=${now - snap.receivedAt}ms 开始接管仪表")
+            state = ClusterState.ACTIVE
+        }
 
         val frame = try {
             ClusterMapper.toFrame(
@@ -129,9 +183,12 @@ class ClusterPublisher(
     private fun sendTbtIfNeeded(frame: TbtFrame, now: Long) {
         if (!settings.tbtEnabled) return
         val changed = frame != lastTbt
-        val keepalive = now - lastTbtAt >= TBT_KEEPALIVE_MS
+        // 罗盘帧不做保活：航向静止时重发只会让 HSAE 仪表反复重绘外圈（圆圈闪烁）
+        val keepalive = frame.displayType != DISPLAY_TYPE_COMPASS &&
+            now - lastTbtAt >= TBT_KEEPALIVE_MS
         if ((changed || keepalive) && now - lastTbtAt >= TBT_MIN_INTERVAL_MS) {
             if (transport.sendTbt(frame)) {
+                dbg("TBT", "type=${frame.displayType} dir=${frame.direction} dist=${frame.distVal} reason=${if (changed) "changed" else "keepalive"}")
                 lastTbt = frame
                 lastTbtAt = now
                 lastSentAt(now)
@@ -147,6 +204,7 @@ class ClusterPublisher(
         val clamped = ClusterMapper.clampSpeed(lastSentSpeed, frame.kph, now - lastSpeedAt)
         if (lastSpeed != null && clamped == lastSentSpeed) return
         if (transport.sendSpeed(SpeedFrame(clamped))) {
+            dbg("SPEED", "kph=$clamped prev=$lastSentSpeed")
             lastSpeed = SpeedFrame(clamped)
             lastSentSpeed = clamped
             lastSpeedAt = now
@@ -162,6 +220,7 @@ class ClusterPublisher(
         val keepalive = now - lastEstAt >= EST_KEEPALIVE_MS
         if ((changed || keepalive) && now - lastEstAt >= EST_MIN_INTERVAL_MS) {
             if (transport.sendEst(frame)) {
+                dbg("EST", "dist=${frame.distVal} unit=${frame.unit} time=${frame.hour}:${frame.minute} reason=${if (changed) "changed" else "keepalive"}")
                 lastEst = frame
                 lastEstAt = now
                 lastSentAt(now)
@@ -175,6 +234,7 @@ class ClusterPublisher(
         if (!settings.textEnabled) return
         if (frame != lastText && now - lastTextAt >= TEXT_MIN_INTERVAL_MS) {
             if (transport.sendText(frame)) {
+                dbg("TEXT", "'${frame.text}'")
                 lastText = frame
                 lastTextAt = now
                 lastSentAt(now)

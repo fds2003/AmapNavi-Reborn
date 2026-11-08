@@ -264,4 +264,90 @@ class ClusterPublisherTest {
         p.tick(1_000L)
         assertTrue(t.calls.isEmpty())
     }
+
+    // ---------------------------------------------------------------------
+    // 地图态罗盘（displayType=8）：实车定位"仪表圆圈每 2 秒闪一次"的根因修复
+    // 高德未导航时只发 10001 的 CAR_DIRECTION，航向静止不变；
+    // 罗盘帧若按 2 秒保活重发，HSAE 仪表每次重绘外圈 → 圆圈闪烁。
+    // ---------------------------------------------------------------------
+
+    private fun compassNavi(dir: Int, valid: Boolean = true, now: Long = 1_000L) = NaviState(
+        navValid = valid,
+        tbtDistance = 0,
+        tbtTurnType = 0,
+        carDirection = dir,
+        roadSpeedLimit = 0,
+        currentRoadName = "环馆路",
+        timestamp = now
+    )
+
+    @Test
+    fun `罗盘帧不保活重发，避免仪表圆圈闪烁`() {
+        val t = FakeTransport()
+        val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
+        p.onNaviState(compassNavi(90), 1_000L)
+        p.tick(1_000L)
+        val first = t.calls.count { it.startsWith("tbt:8:") }
+        assertEquals("首帧应发送一次罗盘", 1, first)
+
+        // 2 秒、4 秒、10 秒后方向未变：不得重发罗盘帧
+        p.tick(3_000L)
+        p.tick(5_000L)
+        p.tick(11_000L)
+        assertEquals(
+            "罗盘方向未变时不得保活重发（否则仪表圆圈闪烁）",
+            1, t.calls.count { it.startsWith("tbt:8:") }
+        )
+    }
+
+    @Test
+    fun `罗盘方向变化时立即重发`() {
+        val t = FakeTransport()
+        val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
+        p.onNaviState(compassNavi(90), 1_000L)
+        p.tick(1_000L)
+
+        p.onNaviState(compassNavi(180), 2_000L)
+        p.tick(2_000L)
+        assertEquals("方向变化应额外发送一帧", 2, t.calls.count { it.startsWith("tbt:8:") })
+    }
+
+    @Test
+    fun `罗盘模式数据间歇时不交还，保持常显`() {
+        val t = FakeTransport()
+        val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
+        p.onNaviState(compassNavi(90), 1_000L)
+        p.tick(1_000L)
+        t.calls.clear()
+
+        // 高德地图态 10001 是事件驱动，十几秒才一条：不得因 3 秒超时交还仪表
+        p.tick(12_000L)
+        assertEquals(ClusterState.ACTIVE, p.status.value.state)
+        assertTrue("罗盘模式不应触发交还序列", t.calls.none { it.startsWith("tbt:3:") || it.startsWith("tbt:8:0:0:0:0") })
+    }
+
+    @Test
+    fun `导航结束仍立即交还仪表`() {
+        val t = FakeTransport()
+        val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
+        p.onNaviState(compassNavi(90), 1_000L)
+        p.tick(1_000L)
+
+        p.onNaviState(compassNavi(90, valid = false), 1_100L)
+        p.tick(1_100L)
+        assertEquals(ClusterState.RELEASED, p.status.value.state)
+    }
+
+    @Test
+    fun `普通TBT箭头仍按2秒保活`() {
+        val t = FakeTransport()
+        val p = ClusterPublisher(t, FakeSettings()) { 1_000L }
+        p.onNaviState(navi(), 1_000L)   // tbtTurnType=3 → 普通箭头
+        p.tick(1_000L)
+        val first = t.calls.count { it.startsWith("tbt:") }
+
+        p.onNaviState(navi(), 3_500L)   // 同样内容，仅刷新到达时间
+        p.tick(3_500L)
+        assertEquals("普通箭头仍需保活", first + 1, t.calls.count { it.startsWith("tbt:") })
+    }
 }
