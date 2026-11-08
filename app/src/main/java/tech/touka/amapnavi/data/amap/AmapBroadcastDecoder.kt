@@ -46,9 +46,9 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                 val routeRemainTime = intent.getIntExtra(
                     AmapContract.EXTRA_ROUTE_REMAIN_TIME, current.routeRemainTime
                 )
-                val nextRoadName = intent.getStringExtra(AmapContract.EXTRA_NEXT_ROAD_NAME)
+                val nextRoadName = safeStringExtra(intent, AmapContract.EXTRA_NEXT_ROAD_NAME)
                     ?: current.nextRoadName
-                val currentRoadName = intent.getStringExtra(AmapContract.EXTRA_CUR_ROAD_NAME)
+                val currentRoadName = safeStringExtra(intent, AmapContract.EXTRA_CUR_ROAD_NAME)
                     ?: current.currentRoadName
                 val trafficLightSeconds = intent.getIntExtra(
                     "redLightCountDownSeconds", current.trafficLightSeconds
@@ -63,7 +63,7 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                 val segRemainTime = intent.getIntExtra(
                     AmapContract.EXTRA_SEG_REMAIN_TIME, current.segRemainTime
                 )
-                val etaText = intent.getStringExtra(AmapContract.EXTRA_ETA_TEXT) ?: current.etaText
+                val etaText = safeStringExtra(intent, AmapContract.EXTRA_ETA_TEXT) ?: current.etaText
                 val carDirection = intent.getIntExtra(
                     AmapContract.EXTRA_CAR_DIRECTION, current.carDirection
                 )
@@ -74,7 +74,7 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                     AmapContract.EXTRA_ROUTE_REMAIN_TRAFFIC_LIGHT_NUM, current.routeRemainTrafficLightNum
                 )
                 val cameraType = intent.getIntExtra(AmapContract.EXTRA_CAMERA_TYPE, current.cameraType)
-                val cameraId = intent.getStringExtra(AmapContract.EXTRA_CAMERA_ID) ?: current.cameraId
+                val cameraId = readCameraId(intent, current.cameraId)
 
                 _naviStateFlow.value = current.copy(
                     navValid = readNavValid(intent, default = true),
@@ -104,8 +104,8 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
             }
             AmapContract.KEY_TYPE_DRIVE_WAY -> {
                 // 13012: 车道级拓扑广播，EXTRA_DRIVE_WAY 为 JSON 对象
-                val driveWayRaw = intent.getStringExtra(AmapContract.EXTRA_DRIVE_WAY)
-                    ?: intent.getStringExtra("driveWay") ?: current.driveWayRaw
+                val driveWayRaw = safeStringExtra(intent, AmapContract.EXTRA_DRIVE_WAY)
+                    ?: safeStringExtra(intent, "driveWay") ?: current.driveWayRaw
                 val parsed = LaneWayParser.parse(driveWayRaw)
                 _naviStateFlow.value = current.copy(
                     driveWayRaw = driveWayRaw,
@@ -116,8 +116,8 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
             }
             AmapContract.KEY_TYPE_LANE, AmapContract.KEY_TYPE_TRAFFIC_LIGHT -> {
                 // 10019 / 10020: 文档 14 声明值，保留兼容；载荷同样兼容 JSON 与竖线串
-                val driveWayRaw = intent.getStringExtra(AmapContract.EXTRA_DRIVE_WAY)
-                    ?: intent.getStringExtra("driveWay") ?: current.driveWayRaw
+                val driveWayRaw = safeStringExtra(intent, AmapContract.EXTRA_DRIVE_WAY)
+                    ?: safeStringExtra(intent, "driveWay") ?: current.driveWayRaw
                 val trafficLightSeconds = intent.getIntExtra("redLightCountDownSeconds", -1).takeIf { it >= 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_TRAFFIC_LIGHT_SECONDS, current.trafficLightSeconds)
                 val trafficLightStatus = intent.getIntExtra("trafficLightStatus", current.trafficLightStatus)
@@ -135,8 +135,8 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
             }
             else -> {
                 // 兼顾未声明 KEY_TYPE 的全量字段广播
-                val driveWayRaw = intent.getStringExtra(AmapContract.EXTRA_DRIVE_WAY)
-                    ?: intent.getStringExtra("driveWay") ?: ""
+                val driveWayRaw = safeStringExtra(intent, AmapContract.EXTRA_DRIVE_WAY)
+                    ?: safeStringExtra(intent, "driveWay") ?: ""
                 val roadLimitSpeed = intent.getIntExtra("LIMITED_SPEED", 0).takeIf { it > 0 }
                     ?: intent.getIntExtra(AmapContract.EXTRA_ROAD_LIMIT_SPEED, 0)
                 val cameraSpeedLimit = intent.getIntExtra("CAMERA_SPEED", 0).takeIf { it > 0 }
@@ -157,9 +157,9 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                 val routeRemainTime = intent.getIntExtra(
                     AmapContract.EXTRA_ROUTE_REMAIN_TIME, current.routeRemainTime
                 )
-                val nextRoadName = intent.getStringExtra(AmapContract.EXTRA_NEXT_ROAD_NAME)
+                val nextRoadName = safeStringExtra(intent, AmapContract.EXTRA_NEXT_ROAD_NAME)
                     ?: current.nextRoadName
-                val currentRoadName = intent.getStringExtra(AmapContract.EXTRA_CUR_ROAD_NAME)
+                val currentRoadName = safeStringExtra(intent, AmapContract.EXTRA_CUR_ROAD_NAME)
                     ?: current.currentRoadName
                 val curSpeed = intent.getIntExtra(AmapContract.EXTRA_CUR_SPEED, current.curSpeed)
                 val routeTotalDistance = intent.getIntExtra(
@@ -168,7 +168,7 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                 val segRemainTime = intent.getIntExtra(
                     AmapContract.EXTRA_SEG_REMAIN_TIME, current.segRemainTime
                 )
-                val etaText = intent.getStringExtra(AmapContract.EXTRA_ETA_TEXT) ?: current.etaText
+                val etaText = safeStringExtra(intent, AmapContract.EXTRA_ETA_TEXT) ?: current.etaText
                 val carDirection = intent.getIntExtra(
                     AmapContract.EXTRA_CAR_DIRECTION, current.carDirection
                 )
@@ -179,7 +179,7 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
                     AmapContract.EXTRA_ROUTE_REMAIN_TRAFFIC_LIGHT_NUM, current.routeRemainTrafficLightNum
                 )
                 val cameraType = intent.getIntExtra(AmapContract.EXTRA_CAMERA_TYPE, current.cameraType)
-                val cameraId = intent.getStringExtra(AmapContract.EXTRA_CAMERA_ID) ?: current.cameraId
+                val cameraId = readCameraId(intent, current.cameraId)
                 _naviStateFlow.value = AmapBroadcastCodec.decode(
                     driveWayRaw = driveWayRaw,
                     roadLimitSpeed = roadLimitSpeed,
@@ -250,4 +250,46 @@ class AmapBroadcastDecoder : BroadcastReceiver() {
     fun reset() {
         _naviStateFlow.value = NaviState()
     }
+}
+
+/**
+ * 容错读取 String Extra：高德部分 key 实际可能是 Integer，
+ * getStringExtra 会抛 ClassCastException 并中断整条广播解析，这里降级为 null。
+ */
+internal fun safeStringExtra(intent: Intent, key: String): String? =
+    try {
+        intent.getStringExtra(key)
+    } catch (e: Exception) {
+        null
+    }
+
+/**
+ * 容错读取高德 cameraID：可能是 String 也可能是 Integer（实车 logcat 实锤）。
+ * 优先按 String 读；类型不匹配时按 Int 读并转字符串；都失败保留上一帧。
+ */
+internal fun readCameraId(intent: Intent, fallback: String): String = readCameraId(
+    getString = { key -> safeStringExtra(intent, key) },
+    getInt = { key, default -> intent.getIntExtra(key, default) },
+    fallback = fallback
+)
+
+/** 纯函数版本，便于 JVM 单测注入 fake 读取器。 */
+internal fun readCameraId(
+    getString: (String) -> String?,
+    getInt: (String, Int) -> Int,
+    fallback: String
+): String {
+    val asString = try {
+        getString(AmapContract.EXTRA_CAMERA_ID)
+    } catch (e: Exception) {
+        null
+    }
+    if (!asString.isNullOrEmpty()) return asString
+
+    val asInt = try {
+        getInt(AmapContract.EXTRA_CAMERA_ID, -1)
+    } catch (e: Exception) {
+        -1
+    }
+    return if (asInt >= 0) asInt.toString() else fallback
 }

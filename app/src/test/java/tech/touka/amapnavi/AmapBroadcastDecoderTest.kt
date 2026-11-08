@@ -7,6 +7,7 @@ import org.junit.Test
 import tech.touka.amapnavi.core.model.NaviState
 import tech.touka.amapnavi.core.util.LaneWayParser
 import tech.touka.amapnavi.data.amap.AmapBroadcastCodec
+import tech.touka.amapnavi.data.amap.readCameraId
 
 /**
  * 高德广播解码契约测试（纯 JVM）。
@@ -172,5 +173,46 @@ class AmapBroadcastDecoderTest {
         assertEquals(8, state.routeRemainTrafficLightNum)
         assertEquals(1, state.cameraType)
         assertEquals("cam_bj_0192", state.cameraId)
+    }
+
+    @Test
+    fun `cameraID为Integer时不抛异常并转为字符串`() {
+        // 实车 logcat 实锤：高德把 cameraID 作为 Integer 发，getStringExtra 抛 ClassCastException
+        val cameraId = readCameraId(
+            getString = { throw ClassCastException("java.lang.Integer cannot be cast to java.lang.String") },
+            getInt = { _, _ -> 12345 },
+            fallback = "上一帧"
+        )
+        assertEquals("12345", cameraId)
+    }
+
+    @Test
+    fun `cameraID为String时原样使用`() {
+        val cameraId = readCameraId(
+            getString = { "999" },
+            getInt = { _, default -> default },
+            fallback = "上一帧"
+        )
+        assertEquals("999", cameraId)
+    }
+
+    @Test
+    fun `cameraID缺失时保留上一帧`() {
+        val cameraId = readCameraId(
+            getString = { null },
+            getInt = { _, default -> default },
+            fallback = "上一帧"
+        )
+        assertEquals("上一帧", cameraId)
+    }
+
+    @Test
+    fun `cameraID类型完全无法识别时兜底且不抛异常`() {
+        val cameraId = readCameraId(
+            getString = { throw ClassCastException() },
+            getInt = { _, _ -> throw ClassCastException() },
+            fallback = "上一帧"
+        )
+        assertEquals("上一帧", cameraId)
     }
 }
