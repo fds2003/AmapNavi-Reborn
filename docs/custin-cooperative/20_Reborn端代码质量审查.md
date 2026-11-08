@@ -4,10 +4,12 @@
 > 审查范围：`app/src/main/java/tech/touka/amapnavi/` 全部 Kotlin 源文件（28 个）
 > 结论以 HEAD 代码为准；所有问题均标注文件与行号。
 >
-> **修复进度（2026-11-08 同步）**：R-2 / R-4 / R-5 / R-6 / R-7 / R-8 已按 TDD 修复并通过
-> 全量 171 项 JVM 单测 + `assembleDebug` 构建（Reborn 仓库 `main` 分支，commit 9b4f959）。
+> **修复进度（2026-11-08 同步）**：R-1 / R-2 / R-4 / R-5 / R-6 / R-7 / R-8 已按 TDD 修复并通过
+> 全量 155 项 JVM 单测 + `assembleDebug` 构建（Reborn 仓库 `main` 分支，commit 9b4f959 / b5938f2）。
 > 测试：`LaneWayParserTest` 新增 R-8 多推荐车道用例；`ClusterPublisherTest` 新增
-> R-2 快照读一致性 + 过期帧负向对照。R-1 / R-9 / R-10 / R-3 维持「规划/标定后」档。
+> R-2 快照读一致性 + 过期帧负向对照；R-1 为 UI 重构（JVM 单测覆盖不到控件），以
+> `assembleDebug` 编译 + 静态契约检查（SettingActivity 无重复方法残留）验证。
+> 仅剩 R-9 / R-10 / R-3 维持「规划/标定后」档。
 
 ---
 
@@ -127,6 +129,14 @@ SettingActivity 应只做壳：
 ```
 
 统一使用 `SettingViewController`，`SettingActivity` 退化为纯容器，彻底删除 `SettingActivity` 中的所有 `init*Tab()` 副本。
+
+> ✅ 状态：已修复（commit b5938f2）。`SettingActivity.kt` 由 423 行降至 56 行（纯壳），
+> `onCreate` 实例化并挂 `SettingViewController`，删除 `init*Tab`/`bindStepField`/
+> `saveIntFromEditText`/保存回调全部副本（grep 确认 0 残留）。保留 Activity 独有的
+> `returnToHome()`/`onBackPressed`/`onNewIntent`（跳回 MainActivity、接收 tab extra），
+> 通过 `onCloseRequested={returnToHome()}` 保留原"关闭"语义。Controller 无需补齐
+> （LogManager/C3 弹窗等独有按钮 Controller 已覆盖）。`assembleDebug` 编译通过 +
+> 全量 155 项 JVM 单测全绿 + 静态契约检查。
 
 ---
 
@@ -475,7 +485,7 @@ override fun sendTbt(frame: TbtFrame): Boolean =
 | **近期** | R-2 ClusterPublisher 快照化 | 15 行 | 低 | 消除跨线程组合读 | ✅ 已修 |
 | **近期** | R-8 targetLaneIndex 中位数取法 | 3 行 | 低 | 多推荐车道场景正确 | ✅ 已修 |
 | **近期** | R-10 transact 只清空出错 binder | 20 行重构 | 低 | 减少不必要的反射 | ⏸ 未做（Binder 反射路径，需实车验证） |
-| **规划** | R-1 SettingActivity 退化为壳 | 删除 ~200 行 | 中（需完整回归） | 消灭重复代码 | ⏸ 未做 |
+| **规划** | R-1 SettingActivity 退化为壳 | 删除 ~200 行 | 中（需完整回归） | 消灭重复代码 | ✅ 已修（b5938f2，实际删 382 行） |
 | **规划** | R-9 RampSpeedPlanner 参数接入设置页 | 30 行 | 低 | 匝道目标速度可配 | ⏸ 未做 |
 | **标定后** | R-3 AdasPayloadCodec 语义名替换 | 60+ 字段重命名 | 低（机械替换） | 可维护性 | ⏸ 待实车标定 |
 
