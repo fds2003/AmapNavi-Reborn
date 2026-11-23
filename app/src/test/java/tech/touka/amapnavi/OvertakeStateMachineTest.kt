@@ -186,6 +186,38 @@ class OvertakeStateMachineTest {
         assertTrue(sounds.contains(SoundEvent.LANE_CHANGE_CANCEL))
     }
 
+    // ---- M-14：执行期结算语义（原 C3 仓库 test_atc_state_telemetry.py 的 mock 循环自证用例，
+    //      P1-6 迁移至生产状态机的真实测试）----
+
+    @Test
+    fun `执行中收到atc_state=3反馈即成功结算且不播撤销音`() {
+        // 进入 EXECUTING
+        tick(car()); tick(car()); tick(car())
+        now += 1300L
+        assertEquals(OvertakeState.EXECUTING, tick(car()).state)
+
+        val st = tick(car(atcState = 3))
+        assertEquals(OvertakeState.FINISHING, st.state)
+        assertTrue(sounds.contains(SoundEvent.LANE_CHANGE_OK))
+        assertTrue(!sounds.contains(SoundEvent.LANE_CHANGE_CANCEL))
+    }
+
+    @Test
+    fun `执行超时未收到atc_state=3按撤销结算而非假成功`() {
+        // 遥测在线但 atc_state 恒为 2（未完成反馈），超过 executeTimeoutMs(4500ms)
+        tick(car()); tick(car()); tick(car())
+        now += 1300L
+        assertEquals(OvertakeState.EXECUTING, tick(car()).state)
+
+        now += settings.executeTimeoutMs + 100L
+        val st = tick(car(atcState = 2))
+        assertEquals(OvertakeState.COOLDOWN, st.state)
+        assertEquals(1, cancels.size)
+        assertTrue(sounds.contains(SoundEvent.LANE_CHANGE_CANCEL))
+        assertTrue(!sounds.contains(SoundEvent.LANE_CHANGE_OK),
+            "Timed out lane change MUST NOT play success audio!")
+    }
+
     @Test
     fun `待机时遥测中断不发送撤单`() {
         val lost = machine.onTelemetryLost(1500L)
